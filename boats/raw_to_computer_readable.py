@@ -45,7 +45,8 @@
 # of which each column corresponds the 1 boat.
 # Of course column i of the data matrix corresponds to the boat
 # of price of column i in the asking price matrix.
-
+#
+# Note, we will apply cuts!
 
 import os  
 import numpy as np
@@ -328,6 +329,61 @@ def get_boat_data(data_dicts):
     return np.transpose(input_data), target_data
 
 
+def apply_cuts(data_dicts):
+
+    """
+    This function applies the current cuts.
+    """
+
+    cut_data_dicts = list()
+
+    for data_dict in data_dicts:
+
+        passes_cuts = True
+
+        for key, value in data_dict.iteritems():
+
+            if not value:
+                continue
+
+            if key == 'length_over_all_meters':
+                if value > 30.:
+                    passes_cuts = False
+                    break
+
+            if key == 'width_meters':
+                if value > 8.:
+                    passes_cuts = False
+                    break
+
+            if key == 'build_year':
+                if value < 1960.:
+                    passes_cuts = False
+                    break
+
+            if key == 'draft_meters':
+                if value < 0.1 or value > 3.3:
+                    passes_cuts = False
+                    break
+
+            if key == 'displaces_kgs':
+                if value > 50000.:
+                    passes_cuts = False
+                    break
+
+            if key == 'ballast_kgs':
+                if value > 8000.:
+                    passes_cuts = False
+                    break
+
+        if passes_cuts:
+            cut_data_dicts.append(data_dict)
+        else:
+            print('Cutting {}'.format(data_dict))
+            
+    return cut_data_dicts
+
+
 def write_data_to_file(safe=True):
 
     """
@@ -346,15 +402,21 @@ def write_data_to_file(safe=True):
 
     data_dicts = get_boat_data_dicts()
 
+    data_dicts = apply_cuts(data_dicts)
+
     input_data, target_data = get_boat_data(data_dicts)
 
-    # print('input_data: \n{}'.format(input_data))
-    # print('target_data: \n{}'.format(target_data))
+    print('input_data: \n{}'.format(input_data))
+    print('target_data: \n{}'.format(target_data))
 
-    np.save('{}/{}'.format(DATA_DIR_OUT,'feature_names'), FEATURE_NAMES)
-    np.save('{}/{}'.format(DATA_DIR_OUT,'builder_names'), BUILDER_NAMES)
-    np.save('{}/{}'.format(DATA_DIR_OUT,'input_data'), input_data)
-    np.save('{}/{}'.format(DATA_DIR_OUT,'target_data'), target_data)
+    if safe:
+        print('Saving data to: {}'.format(DATA_DIR_OUT))
+        np.save('{}/{}'.format(DATA_DIR_OUT,'feature_names'), FEATURE_NAMES)
+        np.save('{}/{}'.format(DATA_DIR_OUT,'builder_names'), BUILDER_NAMES)
+        np.save('{}/{}'.format(DATA_DIR_OUT,'input_data'), input_data)
+        np.save('{}/{}'.format(DATA_DIR_OUT,'target_data'), target_data)
+    else:
+        print('Not saving data')
 
-write_data_to_file(False)
+write_data_to_file(True)
     

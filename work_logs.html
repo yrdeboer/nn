@@ -44,6 +44,50 @@ Sums:
 </pre>
 All fine.
 
-
-
- 
+<h2>Analyse/clean input data</h2>
+We'll have to add cuts to the data for sanitation.<br>
+For example:
+<ul>
+<li>Remove very long boat (93m): <tt>/home/ytsboe/data/boats/raw_data/santarelli-modulo-93-89194.dat</tt></li>
+<li>Remove very broad boat (32m): <tt>/home/ytsboe/data/boats/raw_data/j-boats-35-91943.dat</tt></li>
+</ul>
+<p>
+The cuts will be:
+<p>
+<table border=1>
+  <tr>
+    <td>
+      length
+    </td><td>
+      lt 30m
+  </td></tr>
+  <tr><td>
+      width
+    </td><td>
+      lt 8m
+  </td></tr>
+  <tr><td>
+      build year
+    </td><td>
+      gt 1960
+  </td></tr>
+  <tr><td>
+      draft
+    </td><td>
+      lt 3.3
+  </td></tr>
+  <tr><td>
+      displaces
+    </td><td>
+      lt 50000
+  </td></tr>
+  <tr><td>
+      ballast
+    </td><td>
+      lt 8000
+  </td></tr>
+</table>
+Stored the pdf with the plots here: <tt>/home/ytsboe/github/nn/boats/20160305_histograms_raw_1.pdf</tt>
+<p>
+Applied these cuts, plots have now better range: <tt>/home/ytsboe/github/nn/boats/20160305_histograms_cleaned.pdf</tt>
+<p>
