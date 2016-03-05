@@ -255,6 +255,10 @@ def get_boat_data(data_dicts):
         #     count_dict[key],
         #     av_dict[key]))
 
+    print('\nAverages:')
+    for k, v in av_dict.iteritems():
+        print('  {}: {}'.format(k, v))
+
     # Substitute None's with averages
     completed_dicts = list()
     for data_dict in data_dicts:
@@ -299,10 +303,10 @@ def get_boat_data(data_dicts):
         col0 = i * col_count
 
         data_dict = completed_dicts[i]
-        print('data_dict:')
-        for key in FEATURE_NAMES:
-            print('  {}: {}'.format(key, data_dict[key]))
-        print('  builder_name: {}'.format(data_dict['builder_name']))
+        # print('data_dict:')
+        # for key in FEATURE_NAMES:
+        #     print('  {}: {}'.format(key, data_dict[key]))
+        # print('  builder_name: {}'.format(data_dict['builder_name']))
 
         for key in FEATURE_NAMES:
             input_data[col0 + FEATURE_NAMES.index(key)] = data_dict[key]
@@ -321,10 +325,10 @@ def get_boat_data(data_dicts):
     input_data = input_data.reshape((boat_count, col_count))
     target_data = target_data.reshape((1, boat_count))
 
-    return np.transpose(input_data), np.transpose(target_data), 
+    return np.transpose(input_data), target_data
 
 
-def write_data_to_file():
+def write_data_to_file(safe=True):
 
     """
     This function writes all needed data to file, ready for analysis.
@@ -335,6 +339,9 @@ def write_data_to_file():
     BUILDER_NAMES
     input_data
     target_data
+
+    If save is True, then the result will be written to disk,
+    otherwise not.
     """
 
     data_dicts = get_boat_data_dicts()
@@ -349,7 +356,5 @@ def write_data_to_file():
     np.save('{}/{}'.format(DATA_DIR_OUT,'input_data'), input_data)
     np.save('{}/{}'.format(DATA_DIR_OUT,'target_data'), target_data)
 
-write_data_to_file()
-
-    
+write_data_to_file(False)
     
