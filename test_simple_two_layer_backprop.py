@@ -1,5 +1,5 @@
 import numpy as np
-from simple_backprop import SimpleTwoLayerBackprop
+from simple_two_layer_backprop import SimpleTwoLayerBackprop
 
 
 def g(p):
@@ -62,11 +62,30 @@ kwargs['layer2_initial_weights'] = [W2, b2vec]
 
 (V, y) = get_training_set_hagan_test_1()
 kwargs['training_data'] = (V, y)
-kwargs['iteration_count'] = 1
 
+# Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
-
 sp.train_step()
 
-sp.print_weights()
+# Check values
+error_count = 0
+if not int(round(sp.W1[0][0] * 1000)) == -265:
+    error_count += 1
+if not int(round(sp.W1[1][0] * 1000)) == -420:
+    error_count += 1
+if not int(round(sp.b1vec[0][0] * 1000)) == -475:
+    error_count += 1
+if not int(round(sp.b1vec[1][0] * 1000)) == -140:
+    error_count += 1
+if not int(round(sp.W2[0][0] * 1000)) == 171:
+    error_count += 1
+if not int(round(sp.W2[0][1] * 10000)) == -772:
+    error_count += 1
+if not int(round(sp.b2vec[0][0] * 1000)) == 732:
+    error_count += 1
 
+
+if error_count == 0:
+    print('SUCCESS')
+else:
+    print('ERROR (error_count = {})'.format(error_count))
