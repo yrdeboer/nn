@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 DATA_FILE_P = '/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_p.txt'
 DATA_FILE_T = '/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_t.txt'
@@ -21,6 +21,59 @@ def normalise_vector(vec):
     return -1. + 2. * (vec - min) / (max - min)
 
 
+def g(p):
+
+    """
+    The function used in the example.
+    """
+
+    return 1. + np.sin(0.25 * np.pi * p)
+
+
+def plot_g():
+
+    """
+    This function re-creates the plot from the book.
+    """
+
+    x = np.arange(-2, 2.1, 0.2)
+    y = g(x)
+
+    plt.plot(x,y, 'bo', x, y)
+
+    plt.ylim([-1., 3.])
+
+    plt.show()
+
+
+def get_training_set_hagan_test_1(interpolate=False):
+
+    """
+    This function returns the training data to reproduce
+    the Hagan example on p. 11-15.
+
+    It returns two numpy arrays in the format for backprop.
+    See the description of backprop for that format.
+    """
+
+    x_min = -2.
+    x_max = 2.1
+    step = 0.2
+    if interpolate:
+        step = step / 5.
+
+    x = np.arange(x_min, x_max, step)
+
+    x = x.reshape(1, len(x))
+
+    return x, g(x)
+
+
+def logsig(x):
+
+    return 1. / (1. + np.exp(-x))
+
+    
 def get_normalised_data():
 
     """
@@ -110,22 +163,29 @@ def get_sse(W1, b1vec, W2, b2vec, V, y):
 def backprop():
 
     # Constants
-    R = 2   # Input dimension
-    S1 = 10  # Neuron count layer 1
+    R = 1   # Input dimension
+    S1 = 2  # Neuron count layer 1
     S2 = 1  # Neuron count layer 2
     alpha = 0.1
 
-    iteration_count = 500000
+    iteration_count = 1
     sse_spacing = 1001
 
     # Initial weights
-    mult_factor = 0.5
-    W1 = (np.random.random_sample((S1, R)) - 0.5).reshape(S1, R) * mult_factor
-    b1vec = (np.random.random_sample((S1)) - 0.5).reshape((S1, 1)) * mult_factor
-    W2 = (np.random.random_sample(S1) - 0.5).reshape(1, S1) * mult_factor
-    b2vec = (np.random.random_sample(S2).reshape((S2, 1)) - 0.5) * mult_factor
+    # mult_factor = 0.5
+    # W1 = (np.random.random_sample((S1, R)) - 0.5).reshape(S1, R) * mult_factor
+    # b1vec = (np.random.random_sample((S1)) - 0.5).reshape((S1, 1)) * mult_factor
+    # W2 = (np.random.random_sample(S1) - 0.5).reshape(1, S1) * mult_factor
+    # b2vec = (np.random.random_sample(S2).reshape((S2, 1)) - 0.5) * mult_factor
 
-    V, y = get_normalised_data()
+    # Init values for Hagan example p. 11-15
+    W1 = np.array([[-0.27], [-0.41]])
+    b1vec = np.array([[-0.48], [-0.13]])
+    W2 = np.array([[0.09, -0.17]])
+    b2vec = np.array([[0.48]])
+
+    # V, y = get_normalised_data()
+    V, y = get_training_set_hagan_test_1()
 
     ssevecx = np.arange((1. + int(iteration_count / sse_spacing)))
     ssevecy = np.zeros((1. + int(iteration_count / sse_spacing)))
@@ -136,12 +196,14 @@ def backprop():
     # Iterate
     for i in range(iteration_count):
         for j in range(len(y)):
+            j = 15
+
             pvec = V[:, [j]]
-            tvec = np.array([[y[j]]])
+            tvec = y[:, [j]]
 
             a1vec = logsig(np.dot(W1, pvec) + b1vec)
-        
-            # print('a1vec = {} shape = {}'.format(a1vec, a1vec.shape))
+
+            print('a1vec = {} shape = {}'.format(a1vec, a1vec.shape))
         
             # Propagate second layer
             a2vec = np.dot(W2, a1vec) + b2vec
@@ -165,11 +227,22 @@ def backprop():
             # print('s1 = {} shape = {}'.format(s1, s1.shape))
 
             # Done, update weights
-            W2 = W2 - alpha  * s2 * np.transpose(a1vec)
+            W2 = W2 - alpha  * np.dot(s2, np.transpose(a1vec))
             b2vec = b2vec - alpha * s2
         
-            W1 = W1 - alpha * s1 * np.transpose(pvec)
+            W1 = W1 - alpha * np.dot(s1, np.transpose(pvec))
             b1vec = b1vec - alpha * s1
+
+            print('\nUpdated weightes and biases:')
+            print('W1 = {}'.format(W1))
+            print('b1vec = {}'.format(b1vec))
+            print('W2 = {}'.format(W2))
+            print('b2vec = {}'.format(b2vec))
+
+            import ipdb
+            ipdb.set_trace()
+
+
 
         if i > 0 and i % sse_spacing == 0:
             sse = get_sse(W1, b1vec, W2, b2vec, V, y)
@@ -202,3 +275,4 @@ def backprop():
 backprop()
 
 # plot_data()
+
