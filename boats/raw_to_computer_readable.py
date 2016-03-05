@@ -346,18 +346,28 @@ def apply_cuts(data_dicts):
             if not value:
                 continue
 
+            if key == 'asking_price_euros':
+                if value < 1. or value > 1000000.:
+                    passes_cuts = False
+                    break
+
             if key == 'length_over_all_meters':
-                if value > 30.:
+                if value < 3. or value > 30.:
                     passes_cuts = False
                     break
 
             if key == 'width_meters':
-                if value > 8.:
+                if value < 1.5 or value > 5.5:
                     passes_cuts = False
                     break
 
             if key == 'build_year':
-                if value < 1960.:
+                if value < 1960. or value > 2016.:
+                    passes_cuts = False
+                    break
+
+            if key == 'engine_build_year':
+                if value < 1975. or value > 2016.:
                     passes_cuts = False
                     break
 
@@ -367,12 +377,12 @@ def apply_cuts(data_dicts):
                     break
 
             if key == 'displaces_kgs':
-                if value > 50000.:
+                if value < 100. or value > 25000.:
                     passes_cuts = False
                     break
 
             if key == 'ballast_kgs':
-                if value > 8000.:
+                if value < 100. or value > 4000.:
                     passes_cuts = False
                     break
 
