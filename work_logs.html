@@ -139,4 +139,68 @@ $ cp asking_price_builder_names.pdf 20160306_asking_price_builder_names.pdf
 Hallberg Rassy and Hanse boats are significantly more expensive than average.<br>
 The Compromis boats are significantly less expensive.
 <p>
+Managed to apply nn to the boats.<br>
+Found various minima, lowest about 0.03 for mse.<br>
+<p>
+Below: error is plain error, not mse.
+<pre>
+$ python ./nn_simple_boats.py
+S1 = 5 alpha = 1e-05
+Iteration: 10 error train: [[ 0.75295619]] error test: [[ 0.77302896]]  
+Iteration: 14 error train: [[ 0.75286913]] error test: [[ 0.77293925]]
+...
+Iteration: 4468866 error train: [[ 0.19906822]] error test: [[ 0.18165948]]
+Iteration: 6351925 error train: [[ 0.19906822]] error test: [[ 0.18165948]]
+Iteration: 9028455 error train: [[ 0.19906822]] error test: [[ 0.18165948]]
+Saving mses plot to mses.png
+
+W1    = [[-0.24212475  0.02694244  0.02821757 -0.08954417 -0.06884544 -0.22029359
+  -0.17824722  0.12016396  0.07804248 -0.12401254 -0.23812842  0.0067572
+  -0.07502254  0.09752009 -0.14860355 -0.22934456  0.04440873 -0.19319109
+  -0.21739163  0.04663912]
+ [-0.19111259 -0.04972988  0.2766238  -0.20549939 -0.23706564 -0.00905296
+  -0.07868101 -0.01806229  0.11763035  0.21292985 -0.06923144  0.03853001
+  -0.18160576  0.15787528 -0.03442326 -0.14595591  0.06767789  0.15274417
+  -0.23525094  0.01755163]
+ [ 0.08318391 -0.18704918  0.02575674 -0.21834164 -0.02657485 -0.03083301
+  -0.01879369 -0.13354374 -0.07215475  0.10100178  0.01558534 -0.20290369
+  -0.02158654  0.10643996 -0.17490313  0.01301879  0.15909314  0.23171723
+  -0.0187789   0.05825458]
+ [ 0.17224199  0.25418321  0.17877259  0.00282     0.10864183  0.14682755
+  -0.18455865 -0.03242237  0.10119335  0.01979395 -0.16845622  0.10966697
+   0.0434327   0.12205877  0.22940673  0.21840603 -0.13924256 -0.04318723
+  -0.24359756  0.07975306]
+ [ 0.25373977  0.09699836 -0.25198931  0.04910205 -0.12344794  0.05795805
+   0.00623658 -0.03152442 -0.01956241 -0.08682047  0.08043537 -0.14919747
+  -0.05816138 -0.18726213  0.08601861  0.12166136 -0.0105374  -0.035562
+  -0.1693814   0.03321968]]
+b1vec = [[-0.03134725]
+ [ 0.15939111]
+ [-0.18518457]
+ [-0.00446784]
+ [-0.11154539]]
+W2    = [[-0.23789441 -0.41403788  0.09546187  0.23704932  0.22342746]]
+b2vec = [[-0.39715867]]
+Average diff = -0.150578919606 sd = 0.152528493443
+</pre>
+<p>
+<b>Funny:</b>: The test error is consistently smaller than the training error.<br>
+<b>Answer:</b>: This seems to be a quirk of the data, when we train with the first part of
+the data, we don't see that anymore.<br>
+<p>
+<b>Funny:</b>: Cannot get the network to overfit and see the test error go up.<br>
+<p>
+<b>Funny:</b>: The average error is -0.15, not near 0.
+<p>
+<img src="boats/mses_min.png"><img src="boats/diff_min.png">
+<p>
+Above left is the mean squared error for the training set (blue) and test set (red).<br>
+Above right is the difference between the target points in the test set and net responses.<br>
+<p>
+<pre>
+Found max dictionary:
+{'width_meters': 5.5, 'draft_meters': 3.2, 'build_year': 2015.0, 'asking_price_euros': 912500.0, 'engine_build_year': 2015.0, 'length_over_all_meters': 23.0, 'displaces_kgs': 25000.0, 'ballast_kgs': 4000.0}
+Found min dictionary:
+{'width_meters': 1.62, 'draft_meters': 0.23, 'build_year': 1960.0, 'asking_price_euros': 1.0, 'engine_build_year': 1975.0, 'length_over_all_meters': 4.23, 'displaces_kgs': 100.0, 'ballast_kgs': 280.0}
+</pre>
 
