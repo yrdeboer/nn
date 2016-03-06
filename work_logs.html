@@ -101,3 +101,42 @@ Normalised the data, plots here:<br>
 [ytsboe@ytsboe-Latitude-E7250 ~/github/nn/boats (master)]
 $ cp feature_distributions.pdf 20160306_histograms_normalised.pdf
 </pre>
+Price correlates with length, with, draft and build year.<br>
+Little extra information expected from balast, displacement and engine build year.<br>
+<p>
+Plotted features scatter plots:
+<pre>
+[ytsboe@ytsboe-Latitude-E7250 ~/github/nn/boats (master)]
+$ cp feature_scatter_plots.pdf 20160306_feature_scatter_plots.pdf 
+</pre>
+We see the expected large correlation of length with both with and draft.<br>
+Same for ballast and displacement, where also the subsitution of averages
+spoils the correlation.<br>
+<p>
+In short, we expect the length and build year as the only significant features.<br>
+<p>
+Plotted distributions of asking prices for all builders and compared the averages:
+<pre>
+$ python plot_input_data.py
+Asking prices (26.0, avg=-0.90) hist for builder: compromis
+Asking prices (810.0, avg=-0.79) hist for builder: None
+Asking prices (121.0, avg=-0.81) hist for builder: jeanneau
+Asking prices (37.0, avg=-0.88) hist for builder: etap
+Asking prices (34.0, avg=-0.76) hist for builder: contest
+Asking prices (24.0, avg=-0.87) hist for builder: victoire
+Asking prices (28.0, avg=-0.84) hist for builder: elan
+Asking prices (92.0, avg=-0.82) hist for builder: beneteau
+Asking prices (68.0, avg=-0.73) hist for builder: hallberg-rassy
+Asking prices (86.0, avg=-0.67) hist for builder: hanse
+Asking prices (60.0, avg=-0.83) hist for builder: dehler
+Asking prices (60.0, avg=-0.85) hist for builder: dufour
+Asking prices (146.0, avg=-0.83) hist for builder: bavaria
+Average average price = -0.812876360256
+
+[ytsboe@ytsboe-Latitude-E7250 ~/github/nn/boats (master)]
+$ cp asking_price_builder_names.pdf 20160306_asking_price_builder_names.pdf
+</pre>
+Hallberg Rassy and Hanse boats are significantly more expensive than average.<br>
+The Compromis boats are least expensive.
+<p>
+
