@@ -53,7 +53,7 @@ import numpy as np
 
 DATA_DIR_IN = '/home/ytsboe/data/boats/raw_data'
 DATA_DIR_OUT = '/home/ytsboe/data/boats/computer_readable'
-MIN_BUILDERS_COUNT = 30
+MIN_BUILDERS_COUNT = 25
 FEATURE_NAMES = ('length_over_all_meters',
                  'width_meters',
                  'build_year',
@@ -61,6 +61,22 @@ FEATURE_NAMES = ('length_over_all_meters',
                  'displaces_kgs',
                  'ballast_kgs',
                  'engine_build_year')
+
+
+PRINT_DEBUG = True
+
+
+def myprint(* args):
+
+    if not PRINT_DEBUG:
+        return
+
+    s = ''
+
+    for arg in args:
+        s += arg
+
+    print(s)
 
 
 def get_file_full_paths():
@@ -157,7 +173,7 @@ print('BUILDERS_COUNT_DICT = {}'.format(BUILDERS_COUNT_DICT))
 BUILDER_NAMES = BUILDERS_COUNT_DICT.keys()
 
 
-def get_val(line):
+def get_value_from_line(line):
 
     val = line.split(':')[1]
     if 'non' in val.lower():
@@ -168,7 +184,7 @@ def get_val(line):
     return val
 
 
-def get_boat_data_dicts():
+def get_boat_data_cr_dicts_from_files():
 
     """
     This function fetches the boat data in a dictionary for each boat.
@@ -195,10 +211,10 @@ def get_boat_data_dicts():
                         if key == 'build_year' and 'engine' in line:
                             continue
                         
-                        boat_data[key] = get_val(line)
+                        boat_data[key] = get_value_from_line(line)
 
                 if 'asking_price_euros' in line:
-                    boat_data['asking_price_euros'] = get_val(line)
+                    boat_data['asking_price_euros'] = get_value_from_line(line)
 
                 if 'builder_name' in line:
                     boat_data['builder_name'] = line.split(':')[1].split()[0]
@@ -209,17 +225,13 @@ def get_boat_data_dicts():
     return dict_list
 
     
-def get_boat_data(data_dicts):
+def substitute_averages(data_dicts):
 
     """
     This function creates the rows of the data matrix
     as defined above.
 
     It substitutes averages for numerical values, which are missing.
-
-    It extens the numerical data with the sparse array for the builders.
-
-    It returns a matrix, of which the colums are the input vectors for training.
     """
 
     # Collect sums and counts, preparing to calculate averages
@@ -261,7 +273,7 @@ def get_boat_data(data_dicts):
         print('  {}: {}'.format(k, v))
 
     # Substitute None's with averages
-    completed_dicts = list()
+    subsituted_dicts = list()
     for data_dict in data_dicts:
         subst_dict = dict()
         for key, value in data_dict.iteritems():
@@ -281,29 +293,41 @@ def get_boat_data(data_dicts):
                     sparse_list[keys_list.index('None')] = 1.
                 subst_dict[key] = sparse_list
 
-        completed_dicts.append(subst_dict)
+        subsituted_dicts.append(subst_dict)
 
-    # print('Found {} completed dicts:'.format(len(completed_dicts)))
-    # for c_dict in completed_dicts:
+    # print('Found {} completed dicts:'.format(len(subsituted_dicts)))
+    # for c_dict in subsituted_dicts:
     #     for k,v in c_dict.iteritems():
     #         print('  {}: {}'.format(k, v))
     #     print('----')
 
+    return subsituted_dicts
+
+
+def get_boat_data_cr(data_dicts):
+
+    """
+    This function extens the numerical data with the
+    sparse array for the builders.
+    It returns a matrix, of which the colums are the input vectors for training.
+    """
+
     # Finally, we can now create the output matrices
-    boat_count = len(completed_dicts)
+    boat_count = len(data_dicts)
     col_count = len(FEATURE_NAMES) + len(BUILDERS_COUNT_DICT.keys())
 
     print('boat_count = {}'.format(boat_count))
     print('col_count  = {}'.format(col_count))
 
+
     input_data = np.zeros(boat_count * col_count)
     target_data = np.zeros(boat_count)
 
-    for i in range(len(completed_dicts)):
+    for i in range(len(data_dicts)):
 
         col0 = i * col_count
 
-        data_dict = completed_dicts[i]
+        data_dict = data_dicts[i]
         # print('data_dict:')
         # for key in FEATURE_NAMES:
         #     print('  {}: {}'.format(key, data_dict[key]))
@@ -329,7 +353,7 @@ def get_boat_data(data_dicts):
     return np.transpose(input_data), target_data
 
 
-def apply_cuts(data_dicts):
+def remove_outliers(data_dicts):
 
     """
     This function applies the current cuts.
@@ -343,6 +367,7 @@ def apply_cuts(data_dicts):
 
         for key, value in data_dict.iteritems():
 
+            # No worries if no value, we substitute averages later
             if not value:
                 continue
 
@@ -394,6 +419,73 @@ def apply_cuts(data_dicts):
     return cut_data_dicts
 
 
+def map_to_min1_plus1(val, min, max):
+
+    """
+    This function maps the value "val",
+    assumed to be on [min, max], onto [-1, 1].
+    """
+
+    return -1. + 2. * (val - min) / (max - min) 
+
+
+def normalise_to_min1_plus1(data_dicts):
+
+    """
+    This function normalises all the data features,
+    including the target, but excluding the builder info,
+    to [-1, 1].
+
+    This is a useful range for the neural nets, becaus the
+    transfer functions we use for map the input data to that
+    range so we expect no large weights to compensate.
+    """
+
+    float_info = np.finfo('float64')
+
+    normed_data_dicts = list()
+
+    min_dict = dict()
+    max_dict = dict()
+
+    for data_dict in data_dicts:
+
+        for key, value in data_dict.iteritems():
+
+            if key in FEATURE_NAMES or key == 'asking_price_euros':
+
+                if value < min_dict.get(key, float_info.max):
+                    min_dict[key] = value
+    
+                if value > max_dict.get(key, float_info.min):
+                    max_dict[key] = value
+    
+    print('Found max dictionary:\n{}'.format(max_dict))
+    print('Found min dictionary:\n{}'.format(min_dict))
+
+    # Now map linearly to [-1, 1]
+    normed_data_dicts = list()
+    for data_dict in data_dicts:
+
+        normed_dict = dict()
+
+        for key, value in data_dict.iteritems():
+
+            if key in FEATURE_NAMES or key == 'asking_price_euros':
+
+                normed_dict[key] = map_to_min1_plus1(
+                    value,
+                    min_dict[key],
+                    max_dict[key])
+
+            elif key == 'builder_name':
+                normed_dict[key] = data_dict[key]
+
+        normed_data_dicts.append(normed_dict)
+
+    return normed_data_dicts
+
+
 def write_data_to_file(safe=True):
 
     """
@@ -410,11 +502,15 @@ def write_data_to_file(safe=True):
     otherwise not.
     """
 
-    data_dicts = get_boat_data_dicts()
+    data_dicts = get_boat_data_cr_dicts_from_files()
 
-    data_dicts = apply_cuts(data_dicts)
+    data_dicts = remove_outliers(data_dicts)
 
-    input_data, target_data = get_boat_data(data_dicts)
+    data_dicts = substitute_averages(data_dicts)
+
+    data_dicts = normalise_to_min1_plus1(data_dicts)
+
+    input_data, target_data = get_boat_data_cr(data_dicts)
 
     print('input_data: \n{}'.format(input_data))
     print('target_data: \n{}'.format(target_data))
