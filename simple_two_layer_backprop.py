@@ -34,6 +34,15 @@ class SimpleTwoLayerBackprop():
         self.V = training_data[0]
         self.y = training_data[1]
 
+
+    def get_response(self, pvec):
+
+        n1vec = np.dot(self.W1, pvec) + self.b1vec
+        a1vec = self.f1(n1vec)
+        n2vec = np.dot(self.W2, a1vec) + self.b2vec
+        return self.f2(n2vec)
+
+
     def train_step(self):
     
         for j in range(len(self.y)):
@@ -46,7 +55,7 @@ class SimpleTwoLayerBackprop():
 
             n2vec = np.dot(self.W2, a1vec) + self.b2vec
             a2vec = self.f2(n2vec)
-
+            
             Fdot2 = get_sensitivity_diag(self.S2, self.df2, n2vec)
             s2 = -2 * np.dot(Fdot2, tvec - a2vec)
 
@@ -57,6 +66,7 @@ class SimpleTwoLayerBackprop():
             self.b2vec = self.b2vec - self.alpha * s2
             self.W1 = self.W1 - self.alpha * np.dot(s1, np.transpose(pvec))
             self.b1vec = self.b1vec - self.alpha * s1
+
 
     def print_weights(self):
 
