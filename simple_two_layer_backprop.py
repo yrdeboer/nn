@@ -31,6 +31,7 @@ class SimpleTwoLayerBackprop():
         self.b2vec = W2inits[1]
 
         training_data = kwargs.get('training_data', None)
+
         self.V = training_data[0]
         self.y = training_data[1]
 
