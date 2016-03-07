@@ -10,30 +10,83 @@ DATA_DIR_CR = '/home/ytsboe/data/boats/computer_readable'
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
 
-def get_training_data():
+def get_data_sets():
 
     """
-    This function returns the training and test data.
+    This function returns the training, validation and test data.
     """
 
+    # Fetch all data
     input_data = np.load('{}/input_data.npy'.format(DATA_DIR_CR))
     target_data = np.load('{}/target_data.npy'.format(DATA_DIR_CR))
 
-    # Use some ratio
+    # Division fraction training, validation and testing data
+    frac_tr = 0.7
+    frac_val = 0.15
+    frac_tst = 1. - frac_tr - frac_val 
 
-    N = len(target_data[0])  # col count
-    N_train = int(round(.15 * N))
-    N_test = N - N_train
+    # Prepare various data set containers
+    (Nrow, Ncol) = input_data.shape
+    tr_inp = np.zeros((Nrow, Ncol))
+    tr_tar = np.zeros((1, Ncol))
+    val_inp = np.zeros((Nrow, Ncol))
+    val_tar = np.zeros((1, Ncol))
+    tst_inp = np.zeros((Nrow, Ncol))
+    tst_tar = np.zeros((1, Ncol))
 
-    if not N_test + N_train == N:
-        raise ValueError('N_test + N_train not equal to N')
+    # Distribute data randomly
+    i_tr = i_val = i_tst = 0
+    for i in range(Ncol):
 
-    test_input = input_data[:, range(0, N_train)]
-    test_target = target_data[:, range(0, N_train)]
-    train_input = input_data[:, range(N_train, N)]
-    train_target = target_data[:, range(N_train, N)]
+        inp = input_data[:, [i]]
+        tar = target_data[:, [i]]
+        ran = np.random.random()
 
-    return train_input, train_target, test_input, test_target
+        if ran < frac_tr:
+            tr_inp[:, [i_tr]] = inp
+            tr_tar[:, [i_tr]] = tar
+            i_tr += 1
+
+        elif ran < 1. - frac_tst:
+
+            val_inp[:, [i_val]] = inp
+            val_tar[:, [i_val]] = tar
+            i_val += 1
+
+        else:
+            tst_inp[:, [i_tst]] = inp
+            tst_tar[:, [i_tst]] = tar
+            i_tst += 1
+            
+    if not i_tr + i_val + i_tst == Ncol:
+        raise ValueError('Sum of index fractions not well')
+
+    # Cut down to actual sizes
+    tr_inp = tr_inp[:, range(0, i_tr)]
+    tr_tar = tr_tar[:, range(0, i_tr)]
+    val_inp = val_inp[:, range(0, i_val)]
+    val_tar = val_tar[:, range(0, i_val)]
+    tst_inp = tst_inp[:, range(0, i_tst)]
+    tst_tar = tst_tar[:, range(0, i_tst)]
+
+    if not tr_inp.shape[1] + val_inp.shape[1] + tst_inp.shape[1] == Ncol:
+        raise ValueError('Sum of data set sizes not well')
+
+    tot = np.sum(input_data[1])
+    tr = np.sum(tr_inp[1])
+    val = np.sum(val_inp[1])
+    tst = np.sum(tst_inp[1])
+    if tot - tr - val - tst > 1e-14:
+        raise ValueError('Sum of lengths not well')
+
+    tot = np.sum(target_data[0])
+    tr = np.sum(tr_tar[0])
+    val = np.sum(val_tar[0])
+    tst = np.sum(tst_tar[0])
+    if tot - tr - val - tst > 1e-14:
+        raise ValueError('Sum of lengths not well')
+
+    return tr_inp, tr_tar, val_inp, val_tar, tst_inp, tst_tar
 
 
 def tansig(x):
@@ -115,14 +168,14 @@ def plot_distribution(dat_inp, dat_tar, sp):
     plt.close()
 
 R = len(feature_names) + len(builder_names)
-S1 = 100
+S1 = 5
 S2 = 1
 
 kwargs = dict()
 kwargs['input_dim'] = R
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = S2
-kwargs['learning_rate'] = 0.0001
+kwargs['learning_rate'] = 0.001
 
 print('S1 = {} alpha = {}'.format(S1, kwargs['learning_rate']))
 
@@ -141,14 +194,14 @@ b2vec = (np.random.random_sample(S2).reshape((S2, 1)) - 0.5) * mult_factor
 kwargs['layer1_initial_weights'] = [W1, b1vec]
 kwargs['layer2_initial_weights'] = [W2, b2vec]
 
-train_input, train_target, test_input, test_target  = get_training_data()
+train_input, train_target, val_input, val_target, test_input, test_target  = get_data_sets()
 kwargs['training_data'] = (train_input, train_target)
 
 
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 
-iteration_count = 10000000
+iteration_count = 100000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
