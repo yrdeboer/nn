@@ -130,7 +130,7 @@ def plot_asking_price_for_builder_name():
     
 
 
-# plot_feature_distributions()
+plot_feature_distributions()
 # plot_feature_asking_price_scatter_plots()
 # plot_feature_scatter_plots()
 plot_asking_price_for_builder_name()

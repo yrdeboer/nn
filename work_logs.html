@@ -204,3 +204,15 @@ Found min dictionary:
 {'width_meters': 1.62, 'draft_meters': 0.23, 'build_year': 1960.0, 'asking_price_euros': 1.0, 'engine_build_year': 1975.0, 'length_over_all_meters': 4.23, 'displaces_kgs': 100.0, 'ballast_kgs': 280.0}
 </pre>
 
+<h5 align=right>2016 mar 7</h5>
+<h3>Understand why test error larger than train error</h3>
+Answered above, still, we perform a thorough check:<br>
+<ul>
+  <li>Data properly separated? -- Yes, walked through the code.</li>
+  <li>Outliers? -- Yes, removed some high-priced boats. Still not a good fit.</li>
+  <li>Overfitting? -- No, even with 10000 neurons! <b>Why is this so?!</b></li>
+</ul>
+
+<h3>Understand why no overfitting occurs if neuron count very large</h3>
+We should try to reproduce the overfitting example of Hagan: p. 11.18
+

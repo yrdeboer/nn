@@ -200,6 +200,7 @@ def get_boat_data_cr_dicts_from_files():
             # print('Starting file: {}'.format(file))
 
             boat_data = dict()
+            boat_data['file_path'] = f.name
 
             for line in f:
 
@@ -225,6 +226,72 @@ def get_boat_data_cr_dicts_from_files():
     return dict_list
 
     
+def remove_outliers(data_dicts):
+
+    """
+    This function applies the current cuts.
+    """
+
+    cut_data_dicts = list()
+
+    for data_dict in data_dicts:
+
+        passes_cuts = True
+
+        for key, value in data_dict.iteritems():
+
+            # No worries if no value, we substitute averages later
+            if not value:
+                continue
+
+            if key == 'asking_price_euros':
+                if value < 1. or value > 500000.:
+                    passes_cuts = False
+                    break
+
+            if key == 'length_over_all_meters':
+                if value < 3. or value > 30.:
+                    passes_cuts = False
+                    break
+
+            if key == 'width_meters':
+                if value < 1.5 or value > 5.5:
+                    passes_cuts = False
+                    break
+
+            if key == 'build_year':
+                if value < 1960. or value > 2016.:
+                    passes_cuts = False
+                    break
+
+            if key == 'engine_build_year':
+                if value < 1975. or value > 2016.:
+                    passes_cuts = False
+                    break
+
+            if key == 'draft_meters':
+                if value < 0.1 or value > 3.3:
+                    passes_cuts = False
+                    break
+
+            if key == 'displaces_kgs':
+                if value < 100. or value > 25000.:
+                    passes_cuts = False
+                    break
+
+            if key == 'ballast_kgs':
+                if value < 100. or value > 4000.:
+                    passes_cuts = False
+                    break
+
+        if passes_cuts:
+            cut_data_dicts.append(data_dict)
+        else:
+            print('Cutting {}'.format(data_dict))
+            
+    return cut_data_dicts
+
+
 def substitute_averages(data_dicts):
 
     """
@@ -276,6 +343,7 @@ def substitute_averages(data_dicts):
     subsituted_dicts = list()
     for data_dict in data_dicts:
         subst_dict = dict()
+        subst_dict['file_path'] = data_dict['file_path']
         for key, value in data_dict.iteritems():
             if key in FEATURE_NAMES or key == 'asking_price_euros':
                 if value:
@@ -319,15 +387,17 @@ def get_boat_data_cr(data_dicts):
     print('boat_count = {}'.format(boat_count))
     print('col_count  = {}'.format(col_count))
 
-
     input_data = np.zeros(boat_count * col_count)
     target_data = np.zeros(boat_count)
+    file_paths = list()
 
     for i in range(len(data_dicts)):
 
         col0 = i * col_count
 
         data_dict = data_dicts[i]
+        file_paths.append(data_dict['file_path'])
+
         # print('data_dict:')
         # for key in FEATURE_NAMES:
         #     print('  {}: {}'.format(key, data_dict[key]))
@@ -350,73 +420,7 @@ def get_boat_data_cr(data_dicts):
     input_data = input_data.reshape((boat_count, col_count))
     target_data = target_data.reshape((1, boat_count))
 
-    return np.transpose(input_data), target_data
-
-
-def remove_outliers(data_dicts):
-
-    """
-    This function applies the current cuts.
-    """
-
-    cut_data_dicts = list()
-
-    for data_dict in data_dicts:
-
-        passes_cuts = True
-
-        for key, value in data_dict.iteritems():
-
-            # No worries if no value, we substitute averages later
-            if not value:
-                continue
-
-            if key == 'asking_price_euros':
-                if value < 1. or value > 1000000.:
-                    passes_cuts = False
-                    break
-
-            if key == 'length_over_all_meters':
-                if value < 3. or value > 30.:
-                    passes_cuts = False
-                    break
-
-            if key == 'width_meters':
-                if value < 1.5 or value > 5.5:
-                    passes_cuts = False
-                    break
-
-            if key == 'build_year':
-                if value < 1960. or value > 2016.:
-                    passes_cuts = False
-                    break
-
-            if key == 'engine_build_year':
-                if value < 1975. or value > 2016.:
-                    passes_cuts = False
-                    break
-
-            if key == 'draft_meters':
-                if value < 0.1 or value > 3.3:
-                    passes_cuts = False
-                    break
-
-            if key == 'displaces_kgs':
-                if value < 100. or value > 25000.:
-                    passes_cuts = False
-                    break
-
-            if key == 'ballast_kgs':
-                if value < 100. or value > 4000.:
-                    passes_cuts = False
-                    break
-
-        if passes_cuts:
-            cut_data_dicts.append(data_dict)
-        else:
-            print('Cutting {}'.format(data_dict))
-            
-    return cut_data_dicts
+    return np.transpose(input_data), target_data, file_paths
 
 
 def map_to_min1_plus1(val, min, max):
@@ -468,6 +472,7 @@ def normalise_to_min1_plus1(data_dicts):
     for data_dict in data_dicts:
 
         normed_dict = dict()
+        normed_dict['file_path'] = data_dict['file_path']
 
         for key, value in data_dict.iteritems():
 
@@ -486,7 +491,7 @@ def normalise_to_min1_plus1(data_dicts):
     return normed_data_dicts
 
 
-def write_data_to_file(safe=True):
+def write_data_to_file(save=True):
 
     """
     This function writes all needed data to file, ready for analysis.
@@ -504,23 +509,44 @@ def write_data_to_file(safe=True):
 
     data_dicts = get_boat_data_cr_dicts_from_files()
 
+    print('\nCheck 1:')
+    print(data_dicts[1:5])
+
     data_dicts = remove_outliers(data_dicts)
+
+    print('\nCheck 2:')
+    print(data_dicts[1:5])
 
     data_dicts = substitute_averages(data_dicts)
 
+    print('\nCheck 3:')
+    print(data_dicts[1:5])
+
     data_dicts = normalise_to_min1_plus1(data_dicts)
 
-    input_data, target_data = get_boat_data_cr(data_dicts)
+    print('\nCheck 4:')
+    print(data_dicts[1:5])
 
-    print('input_data: \n{}'.format(input_data))
-    print('target_data: \n{}'.format(target_data))
+    input_data, target_data, file_paths = get_boat_data_cr(data_dicts)
 
-    if safe:
+    print('\nCheck 5:')
+    print('{}: {}'.format(file_paths[0], input_data[:, [0]]))
+    print('{}: {}'.format(file_paths[1], input_data[:, [1]]))
+    M = len(file_paths) / 2
+    print('{}: {}'.format(file_paths[M], input_data[:, [M]]))
+
+
+    print('input_data shape: \n{}'.format(input_data.shape))
+    print('target_data.shape: \n{}'.format(target_data.shape))
+    print('files: {}\n'.format(len(file_paths)))
+
+    if save:
         print('Saving data to: {}'.format(DATA_DIR_OUT))
         np.save('{}/{}'.format(DATA_DIR_OUT,'feature_names'), FEATURE_NAMES)
         np.save('{}/{}'.format(DATA_DIR_OUT,'builder_names'), BUILDER_NAMES)
         np.save('{}/{}'.format(DATA_DIR_OUT,'input_data'), input_data)
         np.save('{}/{}'.format(DATA_DIR_OUT,'target_data'), target_data)
+        np.save('{}/{}'.format(DATA_DIR_OUT,'file_paths'), file_paths)
     else:
         print('Not saving data')
 
