@@ -62,8 +62,4 @@ def get_rms_error(dat_inp, dat_tar, sp):
         diff = dat_tar[:, [i]] - pnet
         mse += diff * diff
 
-        if i == 5:
-            print('pvec = {} pnet = {} diff = {}'.format(pvec, pnet, diff))
-
-
     return mse / float(Ncol)

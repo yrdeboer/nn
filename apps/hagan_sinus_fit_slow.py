@@ -50,7 +50,7 @@ kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
 kwargs['layer1_neuron_count'] = 5
 kwargs['layer2_neuron_count'] = 1
-kwargs['learning_rate'] = 0.001
+kwargs['learning_rate'] = 0.0001
 
 kwargs['layer1_transfer_function'] = nn_utils.logsig
 kwargs['layer2_transfer_function'] = nn_utils.purelin
@@ -96,3 +96,4 @@ for i in range(1, iteration_count):
         plt.scatter(train_input[0], train_target[0], c='r')
         plt.draw()
 
+plt.savefig('hagan_sinus_fit_slow.png')
