@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Don't forget to add the parent directory to PYTHONPATH shell variable
-from simple_two_layer_backprop import SimpleTwoLayerBackprop
+from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
 
 
 DATA_DIR_CR = '/home/ytsboe/data/boats/computer_readable'
@@ -204,7 +204,7 @@ def plot_error_distributions(tr_inp,
     plt.close()
 
 R = len(feature_names) + len(builder_names)
-S1 = 10000
+S1 = 10
 S2 = 1
 
 kwargs = dict()
@@ -241,7 +241,7 @@ print('Test set size: {}'.format(test_input.shape[1]))
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 
-iteration_count = 5000
+iteration_count = 500
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 

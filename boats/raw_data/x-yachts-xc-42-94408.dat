@@ -1,0 +1,16 @@
+builder_name:             x-yachts
+type_name:                x-yachts xc-42
+category:                 zeiljacht
+build_material:           polyester
+build_year:               2010.0
+asking_price_euros:       340000.0
+length_over_all_meters:   12.81
+width_meters:             4.1
+draft_meters:             1.95
+displaces_kgs:            400.0
+ballast_kgs:              5000.0
+steering:                 wheel
+engine_name:              volvo
+engine_build_year:        2010.0
+standing_height_meters:   1.95
+url:                      https://www.yachtfocus.com/gebruikte-boten-te-koop/details/XXX/94408/XXX
