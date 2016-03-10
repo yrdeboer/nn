@@ -1,8 +1,10 @@
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+import utils as nn_utils
+from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
 
-DATA_FILE_P = '/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_p.txt'
-DATA_FILE_T = '/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_t.txt'
+DATA_FILE_P = '../hagan_case_study_data/ball_p.txt'
+DATA_FILE_T = '../hagan_case_study_data/ball_t.txt'
 
 
 def normalise_vector(vec):
@@ -21,60 +23,7 @@ def normalise_vector(vec):
     return -1. + 2. * (vec - min) / (max - min)
 
 
-def g(p):
-
-    """
-    The function used in the example.
-    """
-
-    return 1. + np.sin(0.25 * np.pi * p)
-
-
-def plot_g():
-
-    """
-    This function re-creates the plot from the book.
-    """
-
-    x = np.arange(-2, 2.1, 0.2)
-    y = g(x)
-
-    plt.plot(x,y, 'bo', x, y)
-
-    plt.ylim([-1., 3.])
-
-    plt.show()
-
-
-def get_training_set_hagan_test_1(interpolate=False):
-
-    """
-    This function returns the training data to reproduce
-    the Hagan example on p. 11-15.
-
-    It returns two numpy arrays in the format for backprop.
-    See the description of backprop for that format.
-    """
-
-    x_min = -2.
-    x_max = 2.1
-    step = 0.2
-    if interpolate:
-        step = step / 5.
-
-    x = np.arange(x_min, x_max, step)
-
-    x = x.reshape(1, len(x))
-
-    return x, g(x)
-
-
-def logsig(x):
-
-    return 1. / (1. + np.exp(-x))
-
-    
-def get_normalised_data():
+def get_data_sets():
 
     """
     Returns the normalised training data in a 2-tuple as follows:
@@ -83,27 +32,58 @@ def get_normalised_data():
     
     """
 
-    tvec = np.loadtxt('/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_t.txt')
-    P = np.loadtxt('/Users/ytsen/data/hagan_nnd/CaseStudyData/ball_p.txt')
+    tvec = np.loadtxt(DATA_FILE_T)
+    P = np.loadtxt(DATA_FILE_P)
+
+    Ncol = tvec.shape[0]
     
     v1vec = normalise_vector(P[0])
     v2vec =normalise_vector(P[1])
     y = normalise_vector(tvec)
 
-    V = np.zeros((2, len(v1vec)))
+    V = np.zeros((2, Ncol))
     V[0] = v1vec
     V[1] = v2vec
+    y = y.reshape(1, Ncol)
 
-    return (V, y)
+    i_trn = 0
+    trn_inp = np.zeros((2, Ncol))
+    trn_tar = np.zeros((1, Ncol))
+    i_val = 0
+    val_inp = np.zeros((2, Ncol))
+    val_tar = np.zeros((1, Ncol))
+
+    for i in range(Ncol):
+
+        if np.random.random() < .7:
+            trn_inp[:, [i_trn]] = V[:, [i]]
+            trn_tar[:, [i_trn]] = y[:, [i]]
+            i_trn += 1
+
+        else:
+            val_inp[:, [i_val]] = V[:, [i]]
+            val_tar[:, [i_val]] = y[:, [i]]
+            i_val += 1
+
+    trn_inp = trn_inp[:, range(i_trn)]
+    trn_tar = trn_tar[:, range(i_trn)]
+    val_inp = val_inp[:, range(i_val)]
+    val_tar = val_tar[:, range(i_val)]
+
+    if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
+        raise ValueError('Sum of training and validation columns not correct')
+
+    return (trn_inp, trn_tar, val_inp, val_tar)
 
 
 def plot_data():
 
     # Figure 18.4 from book, plots v1 and v2 (67 columns of V) in the y-range: [-1, 1]
 
-    (V, y) = get_normalised_data()
+    (V1, y1, V2, y2) = get_data_sets()
 
-    plt.plot(y, V[0], 'ro', y, V[1], 'bo')
+    plt.plot(y1[0], V1[0], 'ro', y1[0], V1[1], 'bo')
+    plt.plot(y2[0], V2[0], 'r*', y2[0], V2[1], 'b*')
     plt.show()
 
 
@@ -156,116 +136,6 @@ def get_sse(W1, b1vec, W2, b2vec, V, y):
     return np.sum(np.power(y - yhat, 2))
 
 
-def backprop():
-
-    # Constants
-    R = 1   # Input dimension
-    S1 = 2  # Neuron count layer 1
-    S2 = 1  # Neuron count layer 2
-    alpha = 0.1
-
-    iteration_count = 1
-    sse_spacing = 1001
-
-    # Initial weights
-    # mult_factor = 0.5
-    # W1 = (np.random.random_sample((S1, R)) - 0.5).reshape(S1, R) * mult_factor
-    # b1vec = (np.random.random_sample((S1)) - 0.5).reshape((S1, 1)) * mult_factor
-    # W2 = (np.random.random_sample(S1) - 0.5).reshape(1, S1) * mult_factor
-    # b2vec = (np.random.random_sample(S2).reshape((S2, 1)) - 0.5) * mult_factor
-
-    # Init values for Hagan example p. 11-15
-    W1 = np.array([[-0.27], [-0.41]])
-    b1vec = np.array([[-0.48], [-0.13]])
-    W2 = np.array([[0.09, -0.17]])
-    b2vec = np.array([[0.48]])
-
-    # V, y = get_normalised_data()
-    V, y = get_training_set_hagan_test_1()
-
-    ssevecx = np.arange((1. + int(iteration_count / sse_spacing)))
-    ssevecy = np.zeros((1. + int(iteration_count / sse_spacing)))
-    k = 0
-
-    print('len(trange) = {}'.format(len(y)))
-
-    # Iterate
-    for i in range(iteration_count):
-        for j in range(len(y)):
-
-            pvec = V[:, [j]]
-            tvec = y[:, [j]]
-
-            print('pvec = {}'.format(pvec))
-            print('tvec = {}'.format(tvec))
-
-            a1vec = logsig(np.dot(W1, pvec) + b1vec)
-
-            print('a1vec = {} shape = {}'.format(a1vec, a1vec.shape))
-        
-            # Propagate second layer
-            a2vec = np.dot(W2, a1vec) + b2vec
-        
-            # print('vec = {} shape = {}'.format(a2vec, a2vec.shape))
-        
-            # Backprop starting at last layer
-            Fdot2 = np.array([[1.0]])
-
-            s2 = -2 * np.dot(Fdot2, tvec - a2vec)
-        
-            # print('s2 = {} shape = {}'.format(s2, s2.shape))
-
-            dig = np.zeros(a1vec.shape[0])
-            for i2 in range(a1vec.shape[0]):
-                dig[i2] = (1. - a1vec[i2,0]) * a1vec[i2,0]
-            Fdot1 = np.diag(dig)
-
-            s1 = np.dot(np.dot(Fdot1, np.transpose(W2)) ,s2)
-        
-            # print('s1 = {} shape = {}'.format(s1, s1.shape))
-
-            # Done, update weights
-            W2 = W2 - alpha  * np.dot(s2, np.transpose(a1vec))
-            b2vec = b2vec - alpha * s2
-        
-            W1 = W1 - alpha * np.dot(s1, np.transpose(pvec))
-            b1vec = b1vec - alpha * s1
-
-            print('\nUpdated weightes and biases:')
-            print('W1 = {}'.format(W1))
-            print('b1vec = {}'.format(b1vec))
-            print('W2 = {}'.format(W2))
-            print('b2vec = {}'.format(b2vec))
-
-            import ipdb
-            ipdb.set_trace()
-
-
-
-        if i > 0 and i % sse_spacing == 0:
-            sse = get_sse(W1, b1vec, W2, b2vec, V, y)
-            ssevecy[k] = sse
-            print('sse[{}] = {}'.format(k, sse))
-            k += 1
-
-
-        if i > 0 and i % 1000 == 0:
-                print('Iteration {}'.format(i))
-
-
-    print('\nUpdated weightes and biases:')
-    print('W1 = {}'.format(W1))
-    print('b1vec = {}'.format(b1vec))
-    print('W2 = {}'.format(W2))
-    print('b2vec = {}'.format(b2vec))
-
-    # Also take lowest sse
-    ssevecy[k] = get_sse(W1, b1vec, W2, b2vec, V, y)
-    k += 1
-
-    ssevecx = np.resize(ssevecx, k)
-    ssevecy = np.resize(ssevecy, k)
-    print('Final SSEs = {}'.format(ssevecy[-1]))
 
     # Plot stats
     plot(W1, b1vec, W2, b2vec, V, y, ssevecx, ssevecy)
@@ -274,87 +144,56 @@ def backprop():
 
 # plot_data()
 
-def get_sensitivity_diag(S, df, a):
-
-    dig = np.zeros(S)
-    for i in range(S):
-        dig[i] = df(a[i])
-    return np.diag(dig)
 
 
-class SimpleTwoLayerBackprop():
+(train_input, train_target, val_inp, val_tar) = get_data_sets()
 
-    def __init__(self, * args, ** kwargs):
+kwargs = dict()
+kwargs['training_data'] = (train_input, train_target)
+kwargs['input_dim'] = train_input.shape[0]
+kwargs['layer1_neuron_count'] = 30
+kwargs['layer2_neuron_count'] = 1
+kwargs['learning_rate'] = 0.01
 
-        self.R = kwargs.get('input_dim', None)
-        self.S1 = kwargs.get('layer1_neuron_count', None)
-        self.S2 = kwargs.get('layer2_neuron_count', None)
-        self.alpha = kwargs.get('learning_rate', None)
-        self.f1 = kwargs.get('layer1_transfer_function', None)
-        self.f2 = kwargs.get('layer2_transfer_function', None)
-        self.df1 = kwargs.get('layer1_transfer_function_derivative', None)
-        self.df2 = kwargs.get('layer2_transfer_function_derivative', None)
+kwargs['layer1_transfer_function'] = nn_utils.tansig
+kwargs['layer2_transfer_function'] = nn_utils.purelin
+kwargs['layer1_transfer_function_derivative'] = nn_utils.dtansig
+kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
-        W1inits = kwargs.get('layer1_initial_weights', (None, None))
-        self.W1 = W1inits[0]
-        self.b1vec = W1inits[1]
+# Instantiate backprop with init values
+sp = SimpleTwoLayerBackprop(** kwargs)
 
-        W2inits = kwargs.get('layer2_initial_weights', (None, None))
-        self.W2 = W2inits[0]
-        self.b2vec = W2inits[1]
+iteration_count = 100000
+logspace = np.logspace(1., np.log(iteration_count), 100)
+plot_points = [int(i) for i in list(logspace)]
 
-        training_data = kwargs.get('training_data', None)
-        self.V = training_data[0]
-        self.y = training_data[1]
+# Interactive plotting of the mean squared error
+plt.subplot(2,1,1)
+plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+plt.yscale('log')
+plt.xscale('log')
+plt.ion()
+plt.show()
 
-    def train_step(self):
-    
-        for j in range(len(self.y)):
+for i in range(1, iteration_count):
 
-            pvec = self.V[:, [j]]
-            tvec = self.y[:, [j]]
+    sp.train_step()
 
-            print('pvec = {}'.format(pvec))
-            print('tvec = {}'.format(tvec))
+    if i in plot_points:
 
-            n1vec = np.dot(self.W1, pvec) + self.b1vec
-            a1vec = self.f1(n1vec)
+        rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
+        rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
 
-            print('a1vec = {} shape = {}'.format(a1vec, a1vec.shape))
-        
-            # Propagate second layer
-            n2vec = np.dot(self.W2, a1vec) + self.b2vec
-            a2vec = self.f2(n2vec)
-        
-            print('a2vec = {}'.format(a2vec))
 
-            # Backprop starting at last layer
-            Fdot2 = get_sensitivity_diag(self.S2, self.df2, n2vec)
+        print('Iteration: {} rms_trn: {} rms_val'.format(i, rms_trn, rms_val))
 
-            print('Fdot2 = {}'.format(Fdot2))
+        plt.subplot(2,1,1)
+        plt.scatter(i, rms_trn, c='b')
+        plt.scatter(i, rms_val, c='r')
+        plt.draw()
 
-            s2 = -2 * np.dot(Fdot2, tvec - a2vec)
-        
-            print('s2 = {}'.format(s2))
-
-            Fdot1 = get_sensitivity_diag(self.S1, self.df1, n1vec)
-
-            print('Fdot1 = {}'.format(Fdot1))
-
-            s1 = np.dot(np.dot(Fdot1, np.transpose(self.W2)), s2)
-        
-            print('s1 = {}'.format(s1))
-
-            # Done, update weights
-            self.W2 = self.W2 - self.alpha  * np.dot(s2, np.transpose(a1vec))
-            self.b2vec = self.b2vec - self.alpha * s2
-        
-            self.W1 = self.W1 - self.alpha * np.dot(s1, np.transpose(pvec))
-            self.b1vec = self.b1vec - self.alpha * s1
-
-    def print_weights(self):
-
-        print('\nW1    = {}'.format(self.W1))
-        print('b1vec = {}'.format(self.b1vec))
-        print('W2    = {}'.format(self.W2))
-        print('b2vec = {}'.format(self.b2vec))
+        plt.subplot(2,1,2)
+        plt.cla()
+        plt.scatter(train_target[0], sp.get_response(train_input), c='b')
+        plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
+        plt.draw()

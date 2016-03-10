@@ -43,7 +43,7 @@ def get_rms_error(dat_inp, dat_tar, sp):
       dat_inp:  Input data, columns are input vectors
       dat_tar: Target data, columns are target values
       sp:        Instance of a net, should have
-                 a function "get_network_response"
+                 a function "get_response"
 
     Returns:
       A float, the rms error.
