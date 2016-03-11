@@ -57,12 +57,15 @@ class LevenbergMarquardBackprop():
         Returns the current layer, given l.
         """
 
-        if l < 2 * self.S1 + self.R:
+        Nmax_1 = self.S1 * self.R + self.S1
+        Nmax_2 = Nmax_1 + self.S2 * self.S1 + self.S1
+
+        if l < Nmax_1:
             return 1
-        elif l < 2 * self.S1 + self.R + 2 * self.S2 + self.S1:
+        elif l < Nmax_2:
             return 2
 
-        raise ValueError('Value l out of bounds: {}'.format(l))
+        raise IndexError('Value l out of bounds: {}'.format(l))
 
     def get_layer_dim(self, m):
 
@@ -73,7 +76,7 @@ class LevenbergMarquardBackprop():
         elif m == 2:
             return self.S2
 
-        raise ValueError('Value m out of bounds: {} (neuron count)'.format(m))
+        raise IndexError('Value m out of bounds: {} (neuron count)'.format(m))
             
     def get_layer_output(self, m, A1, A2):
 
@@ -89,54 +92,60 @@ class LevenbergMarquardBackprop():
         elif m == 2:
             return A2
 
-        raise ValueError('Value m out of bounds: {} (layer output)'.format(m))
+        raise IndexError('Value m out of bounds: {} (layer output)'.format(m))
 
 
-    def get_jq(self, l):
+    def get_jq(self, h):
 
-        Q = self.V.shape[1]
-        if Q == 0:
-            raise ValueError('Q is 0 (get_jq)')
+        """
+        j and q are needed to calculate a^(m-1)_(j,q)
 
-        return (l / Q, l % Q)
+        h runs over Q batches of size S2
+
+        q is the batch index corresponding to h and
+        j is the offset within that batch
+        """
+
+        return (h % self.S2, h / self.S2)
         
 
-    def get_a(self, h, m_minus_1):
+    def get_a(self, l, h, m_minus_1, A1, A2):
 
         """
         This function returns a^(m-1)_(j,q) as in Hagan eq. (12.43)
         """
 
         S1R = self.S1 * self.R
-        if h < N:
+        if l < S1R:
 
-            A_mm1 = get_layer_output(m_minus_1, A1, A2)
-            j, q = get_jq(h)
+            A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
+            j, q = self.get_jq(h)
             return A_mm1[j,q]
         
         S1RS1 = S1R + self.S1
-        if h < S1RS1:
+        if l < S1RS1:
             return 1.0
 
         S1RS1S2S1 = S1RS1 + self.S2 * self.S1
-        if h < S1RS1S2S1:
+        if l < S1RS1S2S1:
 
-            A_mm1 = get_layer_output(m_minus_1, A1, A2)
-            j, q = get_jq(h)
+            A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
+            j, q = self.get_jq(h)
             return A_mm1[j,q]
 
         S1RS1S2S1S2 = S1RS1S2S1 + self.S2
-        if h < S1RS1S2S1S2:
+        if l < S1RS1S2S1S2:
             return 1.0
 
-        raise ValueError('Value h out of bounds: {}'.format(h))
+        raise IndexError('Value l out of bounds: {}'.format(l))
 
 
     def train_step(self):
 
         V = self.V                  # Input data shape = (R, Q)
         y = self.y                  # Input targets shape = (S2, Q)
-        Q = V.shape[1]             # Input training vector count
+        Q = V.shape[1]              # Input training vector count
+        R = V.shape[0]              # Input vector size
         W1 = self.W1              
         b1vec = self.b1vec
         W2 = self.W2
@@ -185,10 +194,7 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j =  S1 * R + S1 + S2 * S1 + S2
 
-        Jac = np.zeros((Nrow_j, Ncol_j))
-
-        import ipdb
-        ipdb.set_trace()
+        self.Jac = np.zeros((Nrow_j, Ncol_j))
 
         for h in range(Nrow_j):
             for l in range(Ncol_j):
@@ -198,39 +204,12 @@ class LevenbergMarquardBackprop():
                 n = self.get_layer_dim(m)
                 i = h % S2
                 q = h / S2
-                s = S_aug[m-1][i][q+i]
+                s = S_augs[m-1][i][q+i]
 
                 # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
-                a = self.get_a(h, m-1, A1, A2)
+                a = self.get_a(l, h, m-1, A1, A2)
                 
-                Jac[h,l] = s * a
-                
-                
-
-            
-        
-        
-            
-
-
-
-
-
-
-
-
-
-            Fdot2 = get_sensitivity_diag(self.S2, self.df2, n2vec)
-            s2 = -2 * np.dot(Fdot2, tvec - a2vec)
-
-            Fdot1 = get_sensitivity_diag(self.S1, self.df1, n1vec)
-            s1 = np.dot(np.dot(Fdot1, np.transpose(self.W2)), s2)
-
-            self.W2 = self.W2 - self.alpha  * np.dot(s2, np.transpose(a1vec))
-            self.b2vec = self.b2vec - self.alpha * s2
-            self.W1 = self.W1 - self.alpha * np.dot(s1, np.transpose(pvec))
-            self.b1vec = self.b1vec - self.alpha * s1
-
+                self.Jac[h,l] = s * a
 
     def print_weights(self):
 
