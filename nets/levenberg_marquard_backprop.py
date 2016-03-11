@@ -1,8 +1,5 @@
 import numpy as np
-
-
-def get_sensitivity_diag(df, n):
-    return np.diag(np.transpose(df(n))[0])
+import utils as nn_utils
 
 
 class LevenbergMarquardBackprop():
@@ -52,142 +49,162 @@ class LevenbergMarquardBackprop():
         A1 = self.f1(N1)
         N2 = np.dot(self.W2, A1) + self.b2vec
         return self.f2(N2)
+          
 
-
-    def get_sse(ERR):
+    def get_layer(self, l):
 
         """
-        This calculates the Sum Squared Error.
-
-        NOTE: The input must be of shape (1, N)
+        Returns the current layer, given l.
         """
 
-        if not len(ERR.shape) == 2:
-            raise ValueError('Invalid shape for ERR (axis count)')
-        
-        if not ERR.shape[0] == 1:
-            raise ValueError('Invalid shape for ERR (dim)')
+        if l < 2 * self.S1 + self.R:
+            return 1
+        elif l < 2 * self.S1 + self.R + 2 * self.S2 + self.S1:
+            return 2
 
-        return np.sum(np.power(ERR, 2.))
+        raise ValueError('Value l out of bounds: {}'.format(l))
+
+    def get_layer_dim(self, m):
+
+        if m == 0:
+            return self.R
+        if m == 1:
+            return self.S1
+        elif m == 2:
+            return self.S2
+
+        raise ValueError('Value m out of bounds: {} (neuron count)'.format(m))
             
+    def get_layer_output(self, m, A1, A2):
+
+        """
+        This function returns the layer output, for layer m.
+        For the "0'th layer" (m = 0) the input is returned.
+        """
+
+        if m == 0:
+            return self.V
+        elif m == 1:
+            return A1
+        elif m == 2:
+            return A2
+
+        raise ValueError('Value m out of bounds: {} (layer output)'.format(m))
+
+
+    def get_jq(self, l):
+
+        Q = self.V.shape[1]
+        if Q == 0:
+            raise ValueError('Q is 0 (get_jq)')
+
+        return (l / Q, l % Q)
+        
+
+    def get_a(self, h, m_minus_1):
+
+        """
+        This function returns a^(m-1)_(j,q) as in Hagan eq. (12.43)
+        """
+
+        S1R = self.S1 * self.R
+        if h < N:
+
+            A_mm1 = get_layer_output(m_minus_1, A1, A2)
+            j, q = get_jq(h)
+            return A_mm1[j,q]
+        
+        S1RS1 = S1R + self.S1
+        if h < S1RS1:
+            return 1.0
+
+        S1RS1S2S1 = S1RS1 + self.S2 * self.S1
+        if h < S1RS1S2S1:
+
+            A_mm1 = get_layer_output(m_minus_1, A1, A2)
+            j, q = get_jq(h)
+            return A_mm1[j,q]
+
+        S1RS1S2S1S2 = S1RS1S2S1 + self.S2
+        if h < S1RS1S2S1S2:
+            return 1.0
+
+        raise ValueError('Value h out of bounds: {}'.format(h))
+
 
     def train_step(self):
 
-        # Input_count Q (Hagan notation)
-        Q == self.V.shape[1]
+        V = self.V                  # Input data shape = (R, Q)
+        y = self.y                  # Input targets shape = (S2, Q)
+        Q = V.shape[1]             # Input training vector count
+        W1 = self.W1              
+        b1vec = self.b1vec
+        W2 = self.W2
+        b2vec = self.b2vec
+        S1 = self.S1
+        S2 = self.S1
+        f1 = self.f1
+        f2 = self.f2
+        df1 = self.df1
+        df2 = self.df2
 
         # Algorithm from Hagan p. 12-25
         # 
         # 1a. Compute network in- and out-puts N2 and A2
-        N1 = np.dot(self.W1, self.V) + self.b1vec
-        A1 = self.f1(N1)
-        N2 = np.dot(self.W2, A1) + self.b2vec
-        A2 = self.get_response(self.V)
+        N1 = np.dot(W1, V) + b1vec
+        A1 = f1(N1)
+        N2 = np.dot(W2, A1) + b2vec
+        A2 = self.get_response(V)
 
         # 1b. Calculate the errors
-        ERR = self.y - A2
+        ERR = y - A2
 
-        # 1c. Compute sum squared errors using Eq. (12.34)
-        sse = self.get_sse(ERR)
 
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
         #     also the augmented Marquard sensitiviy
-        S_aug_2 = np.zeros(self.S2, self.S2 * Q)
-        S_aug_1 = np.zeros(self.S1, self.S1 * Q)
+        S_aug_2 = np.zeros((S2, S2 * Q))
+        S_aug_1 = np.zeros((S1, S1 * Q))
         for q in range(Q):
 
-            F2q = get_sensitivity_diag(self.df2, N2[q])
+            F2q = nn_utils.get_sensitivity_diag(df2, N2[:, [q]])
             S2q = -F2q
-            S_aug_2[:, range(q * self.S2, (q+1) * self.S2)]
+            S_aug_2[:, range(q * S2, (q+1) * S2)] = S2q
 
-            F1q = get_sensitivity_diag(self.df1, N1[q])
+            F1q = nn_utils.get_sensitivity_diag(df1, N1[:, [q]])
             S1q = np.dot(
-                np.dot(F1q, np.transpose(self.W2)),
+                np.dot(F1q, np.transpose(W2)),
                 S2q)
-            S_aug_1[:, range(q * self.S1, (q+1) * self.S1)]
+            S_aug_1[:, range(q * S1, (q+1) * S1)] = S1q
 
-        F_aug = (F1q, F2q)
+        S_augs = (S_aug_1, S_aug_2)
 
         # 2b. Compute the elements of the Jacobian using
         #     eqs. (12.43) and (12.44)
 
-        def get_layer(l):
+        Nrow_j = S2 * Q
+        Ncol_j =  S1 * R + S1 + S2 * S1 + S2
 
-            """
-            Returns the current layer, given l.
-            """
+        Jac = np.zeros((Nrow_j, Ncol_j))
 
-            if l < 2 * self.S1 + self.R:
-                return 1
-            elif l < 2 * self.S1 + self.R + 2 * self.S2 + self.S1:
-                return 2
-
-            raise ValueError('Value l out of bounds: {}'.format(l))
-
-        def get_layer_dim(m):
-
-            if m == 0:
-                return self.R
-            if m == 1:
-                return self.S1
-            elif m == 2:
-                return self.S2
-
-            raise ValueError('Value m out of bounds: {} (neuron count)'.format(m))
-                
-        def get_layer_output(m, A1, A2):
-
-            if m == 0:
-                return self.V
-            elif m == 1:
-                return A1
-            elif m == 2:
-                return A2
-
-            raise ValueError('Value m out of bounds: {} (layer output)'.format(m))
-
-        def get_a(h):
-
-            S1R = self.S1 * self.R
-            if h < N:
-                row = h / self.S1
-                col = h % self.S1
-                return self.W1[row, col]
-            
-            S1RS1 = S1R + self.S1
-            if h < S1RS1:
-                i = h - S1R
-                row = i % self.S1
-                return self.b1vec[row, 0]
-
-            S1RS1S2S1 = S1RS1 + self.S2 * self.S1
-            if h < S1RS1S2S1:
-                i = h - S1RS1
-                
-
-            S1RS1S2S1S2 = S1RS1S2S1 + self.S2
-            if h < S1RS1S2S1S2:
-                return h - S1RS1S2S1
-
-            raise ValueError('Value h out of bounds: {}'.format(h))
-        
-        Nrow_j = self.S2 * Q
-        Ncol_j =  self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
+        import ipdb
+        ipdb.set_trace()
 
         for h in range(Nrow_j):
             for l in range(Ncol_j):
 
                 # Calculate s^m_(i,h)
-                m = get_layer(l)
-                n = get_layer_dim(m)
-                i = h % self.S2
-                q = h / self.S2
-                s = F_aug[m-1][i][q+i]
+                m = self.get_layer(l)
+                n = self.get_layer_dim(m)
+                i = h % S2
+                q = h / S2
+                s = S_aug[m-1][i][q+i]
 
-                # Calculate a^(m-1)_(j,q)
-                A_m = get_layer_output(m-1, A1, A2)
-                a = get_a(h)
+                # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
+                a = self.get_a(h, m-1, A1, A2)
+                
+                Jac[h,l] = s * a
+                
                 
 
             

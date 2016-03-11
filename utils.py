@@ -63,3 +63,41 @@ def get_rms_error(dat_inp, dat_tar, sp):
         mse += diff * diff
 
     return mse / float(Ncol)
+
+
+def get_sse_from_error(ERR):
+
+    """
+    This calculates the Sum Squared Error.
+
+    NOTE: The input must be of shape (1, N)
+    """
+
+    if not len(ERR.shape) == 2:
+        raise ValueError('Invalid shape for ERR (axis count)')
+    
+    if not ERR.shape[0] == 1:
+        raise ValueError('Invalid shape for ERR (dim)')
+
+    return np.sum(np.power(ERR, 2.))
+
+
+def get_sensitivity_diag(df, n):
+
+    """
+    This function calculates the diagonal matrix of the layer sensitivities
+    as per Hagan eq. (11.34).
+
+    Args:
+      df: The derivatie function of the layer transfer function.
+          Must be able to work with arrays.
+      n:  The net input
+
+    Returns:
+      A diagonal matrix with dimensions the same as
+      the row count of n and the diagonal entries D_ii
+      equal to df(n_i).
+    """
+
+    return np.diag(np.transpose(df(n))[0])
+
