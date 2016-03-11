@@ -42,14 +42,33 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 self.S2).reshape((self.S2, 1)) - 0.5) * mult_factor
 
+        self.mu = 0.01
+        self.theta = 10.
 
-    def get_response(self, P):
 
-        N1 = np.dot(self.W1, P) + self.b1vec
+    def get_response(self, P, W1=None, b1vec=None, W2=None, b2vec=None):
+
+        """
+        This function returns the response of the net.
+
+        If any of the weights or biases are given, then
+        those are used.
+        """
+
+        if not W1:
+            W1 = self.W1
+        if not b1vec:
+            b1vec = self.b1vec
+        if not W2:
+            W2 = self.W2
+        if not b2vec:
+            b2vec = self.b2vec
+
+        N1 = np.dot(W1, P) + b1vec
         A1 = self.f1(N1)
-        N2 = np.dot(self.W2, A1) + self.b2vec
+        N2 = np.dot(W2, A1) + b2vec
         return self.f2(N2)
-          
+
 
     def get_layer(self, l):
 
@@ -140,6 +159,89 @@ class LevenbergMarquardBackprop():
         raise IndexError('Value l out of bounds: {}'.format(l))
 
 
+    def weights_to_x(self, W1=None, b1vec=None, W2=None, b2vec=None):
+
+        """
+        This function returns the vector x as in Hagan eq. (12.36)
+
+        Any argument weight that is None, is taken from self by
+        the same name.
+        """
+
+        R = self.V.shape[0]              # Input vector size
+
+        w1_cnt = self.S1 * R
+        b1_cnt = self.S1
+        w2_cnt = self.S2 * self.S1
+        b2_cnt = self.S2
+
+        w1b1_cnt = w1_cnt + b1_cnt
+        w1b1w2_cnt = w1b1_cnt + w2_cnt
+        w1b1w2b2_cnt = w1b1w2_cnt + b2_cnt
+
+        x = np.zeros(w1b1w2b2_cnt)
+
+        if not W1:
+            W1 = self.W1
+        if not b1vec:
+            b1vec = self.b1vec
+        if not W2:
+            W2 = self.W2
+        if not b2vec:
+            b2vec = self.b2vec
+
+        x[0:w1_cnt] = W1.reshape((w1_cnt))
+        x[w1_cnt:w1b1_cnt] = b1vec.reshape((b1_cnt))
+        x[w1b1_cnt:w1b1w2_cnt] = W2.reshape((w2_cnt))
+        x[w1b1w2_cnt:w1b1w2b2_cnt] = b2vec.reshape((b2_cnt))
+
+        return x
+
+
+    def x_to_weights(self, x):
+
+        """
+        This function takes an x (as in Hagan eq. (12.36))
+        and returns the corresponding weight matrices and
+        vectors.
+        """
+
+        R = self.V.shape[0]
+
+        w1_cnt = self.S1 * R
+        b1_cnt = self.S1
+        w2_cnt = self.S2 * self.S1
+        b2_cnt = self.S2
+
+        w1b1_cnt = w1_cnt + b1_cnt
+        w1b1w2_cnt = w1b1_cnt + w2_cnt
+        w1b1w2b2_cnt = w1b1w2_cnt + b2_cnt
+
+        W1 = x[0:w1_cnt].reshape((self.S1, R))
+        b1vec = x[w1_cnt:w1b1_cnt].reshape((self.S1))
+        W2 = x[w1b1_cnt:w1b1w2_cnt].reshape((self.S2, self.S1))
+        b2vec = x[w1b1w2_cnt:w1b1w2b2_cnt].reshape((self.S2))
+
+        return (W1, b1vec, W2, b2vec)
+
+
+
+    def get_rms_error(self, W1=None, b1vec=None, W2=None, b2vec=None):
+
+        Q = self.V.shape[1]
+
+        mse = 0.
+        for i in range(Q):
+    
+            pvec = self.V[:, [i]]
+            yhat = self.get_response(pvec, W1, b1vec, W2, b2vec)
+    
+            diff = self.y[:, [i]] - yhat
+            mse += diff * diff
+    
+        return mse / float(Q)
+    
+
     def train_step(self):
 
         V = self.V                  # Input data shape = (R, Q)
@@ -167,7 +269,7 @@ class LevenbergMarquardBackprop():
 
         # 1b. Calculate the errors
         ERR = y - A2
-
+        rms = self.get_rms_error()
 
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
@@ -210,6 +312,44 @@ class LevenbergMarquardBackprop():
                 a = self.get_a(l, h, m-1, A1, A2)
                 
                 self.Jac[h,l] = s * a
+
+                J = self.Jac
+                JT = np.transpose(J)
+
+        while True:
+
+            # 3. Solve eq. (12.32) to obtain dx_k
+            det = np.dot(JT, J) + self.mu * np.identity(Ncol_j)
+            det_inv = np.linalg.inv(det)
+            det_inv_jt = np.dot(det_inv, np.transpose(J))
+
+            import ipdb
+            ipdb.set_trace()
+
+            dx_k = -np.dot(det_inv_jt, ERR)
+    
+            # 4a. Recompute rms
+            xk = self.get_x()
+            x_peek = xk + dx_k.reshape(xk.shape)
+    
+            W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
+            rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
+    
+            # 4b. Update
+            if rms_peek < rms:
+
+                rms = rms_peek
+                self.mu /= self.theta
+                self.W1 = W1
+                self.b1vec = b1vec
+                self.W2 = W2
+                self.b2vec = b2vec
+
+                break
+
+            else:
+                self.mu *= self.theta
+    
 
     def print_weights(self):
 
