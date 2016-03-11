@@ -50,7 +50,7 @@ kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
 kwargs['layer1_neuron_count'] = 5
 kwargs['layer2_neuron_count'] = 1
-kwargs['learning_rate'] = 0.0001
+kwargs['learning_rate'] = 0.01
 
 kwargs['layer1_transfer_function'] = nn_utils.logsig
 kwargs['layer2_transfer_function'] = nn_utils.purelin
@@ -61,7 +61,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 
-iteration_count = 10000000
+iteration_count = 100000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -72,6 +72,12 @@ plt.yscale('log')
 plt.xscale('log')
 plt.ion()
 plt.show()
+
+print('Initial weights:')
+sp.print_weights()
+print('Initial response:')
+print(sp.get_response(train_input))
+print('--')
 
 for i in range(1, iteration_count):
 

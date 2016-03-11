@@ -213,6 +213,32 @@ Answered above, still, we perform a thorough check:<br>
   <li>Overfitting? -- No, even with 10000 neurons! <b>Why is this so?!</b></li>
 </ul>
 
-<h3>Try what?</h3>
-...
+<h5 align=right>2016 mar 10</h5>
+<h3>Overfitting reproducing</h3>
+Could not reproduce the overfitting problem.
+Made nice live plotting, one can see the network approaching a sine (from Hagan p. 11-23) but obviously with 9 neurons it interpolates fine.
+<p>
+We give it up, the net works nice, slow but nice.
+
+<h3>Hagan Case Study I Revisited</h3>
+Very nice results.
+
+<h5 align=right>2016 mar 11</h5>
+<h3>Why straight line ...</h3>
+... for the hagan slow fit:
+<pre>
+[ytsboe@ytsboe-Latitude-E7250 ~/github/nn (master)]
+$ dir apps/hagan_sinus_fit_slow.py 
+-rw-rw-r-- 1 ytsboe ytsboe 2416 Mar 11 08:59 apps/hagan_sinus_fit_slow.py
+</pre>
+After initialisation, there is always a straight line ... why?
+<p>
+The inital weights are randomly chosen, verified.<br>
+The response values are similar, but not the same.<br>
+<p>
+After setting the learning rate to 0.01, it worked beautifully!
+<h3>Levenberg - Marquard</h3>
+
+
+
 

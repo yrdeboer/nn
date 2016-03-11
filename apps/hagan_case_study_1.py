@@ -1,10 +1,15 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import utils as nn_utils
 from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
 
-DATA_FILE_P = '../hagan_case_study_data/ball_p.txt'
-DATA_FILE_T = '../hagan_case_study_data/ball_t.txt'
+PYTHONPATH = os.environ.get('PYTHONPATH', None)
+if not PYTHONPATH:
+    raise ValueError('PYTHONPATH not set')
+
+DATA_FILE_P = '{}/hagan_case_study_data/ball_p.txt'.format(PYTHONPATH)
+DATA_FILE_T = '{}/hagan_case_study_data/ball_t.txt'.format(PYTHONPATH)
 
 
 def normalise_vector(vec):
@@ -151,7 +156,7 @@ def get_sse(W1, b1vec, W2, b2vec, V, y):
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 30
+kwargs['layer1_neuron_count'] = 3
 kwargs['layer2_neuron_count'] = 1
 kwargs['learning_rate'] = 0.01
 
@@ -163,7 +168,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 
-iteration_count = 100000
+iteration_count = 10000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -197,3 +202,5 @@ for i in range(1, iteration_count):
         plt.scatter(train_target[0], sp.get_response(train_input), c='b')
         plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
         plt.draw()
+
+plt.savefig('hagan_case_study_1.png')

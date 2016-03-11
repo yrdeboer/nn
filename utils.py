@@ -28,7 +28,7 @@ def purelin(x):
 
 
 def dpurelin(x):
-    return 1.
+    return np.ones(x.shape)
 
 
 def get_rms_error(dat_inp, dat_tar, sp):

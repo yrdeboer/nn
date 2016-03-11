@@ -1,12 +1,8 @@
 import numpy as np
 
 
-def get_sensitivity_diag(S, df, a):
-
-    dig = np.zeros(S)
-    for i in range(S):
-        dig[i] = df(a[i])
-    return np.diag(dig)
+def get_sensitivity_diag(df, n):
+    return np.diag(np.transpose(df(n))[0])
 
 
 class SimpleTwoLayerBackprop():
@@ -74,10 +70,10 @@ class SimpleTwoLayerBackprop():
             n2vec = np.dot(self.W2, a1vec) + self.b2vec
             a2vec = self.f2(n2vec)
             
-            Fdot2 = get_sensitivity_diag(self.S2, self.df2, n2vec)
+            Fdot2 = get_sensitivity_diag(self.df2, n2vec)
             s2 = -2 * np.dot(Fdot2, tvec - a2vec)
 
-            Fdot1 = get_sensitivity_diag(self.S1, self.df1, n1vec)
+            Fdot1 = get_sensitivity_diag(self.df1, n1vec)
             s1 = np.dot(np.dot(Fdot1, np.transpose(self.W2)), s2)
 
             self.W2 = self.W2 - self.alpha  * np.dot(s2, np.transpose(a1vec))

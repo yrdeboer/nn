@@ -1,5 +1,6 @@
 import numpy as np
 from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
+import utils as nn_utils
 
 
 def g(p):
@@ -23,34 +24,17 @@ def get_training_set_hagan_test_1(interpolate=False):
     return (x, g(x))
 
 
-def logsig(x):
-
-    return 1. / (1. + np.exp(-x))
-
-def dlogsig(x):
-    
-    e = np.exp(-x)
-    d = (1. + e)
-    return e / (d * d)
-
-def purelin(x):
-    return x
-
-def dpurelin(x):
-    return 1.
-
-
 kwargs = dict()
 kwargs['input_dim'] = 1
 kwargs['layer1_neuron_count'] = 2
 kwargs['layer2_neuron_count'] = 1
 kwargs['learning_rate'] = 0.1
 
-kwargs['layer1_transfer_function'] = logsig
-kwargs['layer2_transfer_function'] = purelin
+kwargs['layer1_transfer_function'] = nn_utils.logsig
+kwargs['layer2_transfer_function'] = nn_utils.purelin
 
-kwargs['layer1_transfer_function_derivative'] = dlogsig
-kwargs['layer2_transfer_function_derivative'] = dpurelin
+kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
+kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
 W1 = np.array([[-0.27], [-0.41]])
 b1vec = np.array([[-0.48], [-0.13]])
@@ -66,6 +50,9 @@ kwargs['training_data'] = (V, y)
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 sp.train_step()
+
+print('\nWeights:')
+sp.print_weights()
 
 # Check values
 error_count = 0
