@@ -129,11 +129,18 @@ class LevenbergMarquardBackprop():
         return (h % self.S2, h / self.S2)
         
 
-    def get_a(self, l, h, m_minus_1, A1, A2):
+    def get_a_i(self, l, h, m_minus_1, A1, A2):
 
         """
-        This function returns a^(m-1)_(j,q) as in Hagan eq. (12.43)
-        This is a float of shape ()
+        This function returns a 2-tuple.
+        
+        The first element is a^(m-1)_(j,q) as in Hagan eq. (12.43)
+        This is a float of shape ().
+
+        The second element is an integer i, the index of the neuron of the
+        appropriate layer, depending on l and h, needed to fetch
+        the appropriate sensitivity from the augmented Levenberg-Marquard
+        sensitivity matrices.
         """
 
         S1R = self.S1 * self.R
@@ -142,18 +149,22 @@ class LevenbergMarquardBackprop():
             A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
             j, q = self.get_jq(h)
 
-            print('h={} l={} j={} q={} (W1)'.format(
-                h,l,j,q))
+            i = l / self.R
 
-            return A_mm1[j,q]
+            print('h={} l={} i={} j={} q={} (W1)'.format(
+                h,l,i,j,q))
+
+            return (A_mm1[j,q], i)
         
         S1RS1 = S1R + self.S1
         if l < S1RS1:
 
-            print('h={} l={} (b1vec)'.format(
-                h,l))
+            i = (l - S1R)
 
-            return 1.0
+            print('h={} l={} i={} (b1vec)'.format(
+                h,l,i))
+
+            return (1.0, i)
 
         S1RS1S2S1 = S1RS1 + self.S2 * self.S1
         if l < S1RS1S2S1:
@@ -161,18 +172,22 @@ class LevenbergMarquardBackprop():
             A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
             j, q = self.get_jq(h)
 
-            print('h={} l={} j={} q={} (W2)'.format(
-                h,l,j,q))
+            i = (l - S1RS1) / self.S1
 
-            return A_mm1[j,q]
+            print('h={} l={} i={} j={} q={} (W2)'.format(
+                h,l,i,j,q))
+
+            return (A_mm1[j,q], i)
 
         S1RS1S2S1S2 = S1RS1S2S1 + self.S2
         if l < S1RS1S2S1S2:
 
+            i = (l - S1RS1S2S1)
+
             print('h={} l={} (b2vec)'.format(
                 h,l))
 
-            return 1.0
+            return (1.0, i)
 
         raise IndexError('Value l out of bounds: {}'.format(l))
 
@@ -366,14 +381,15 @@ class LevenbergMarquardBackprop():
                 # Calculate s^m_(i,h)
                 m = self.get_layer(l)
                 n = self.get_layer_dim(m)
-                i = h % S2
+
                 q = h / S2
+
+                # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
+                (a, i) = self.get_a_i(l, h, m-1, A1, A2)
+
                 s = S_augs[m-1][i][q+i]
 
                 print('S_augs[{}][{}][{}] = {}'.format(m-1,i,q+i,s))
-
-                # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
-                a = self.get_a(l, h, m-1, A1, A2)
                
                 self.Jac[h,l] = s * a
 
