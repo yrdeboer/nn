@@ -32,6 +32,7 @@ class LevenbergMarquardBackprop():
             self.b1vec = (np.random.random_sample(
                 (self.S1)) - 0.5).reshape((self.S1, 1)) * mult_factor
 
+
         W2inits = kwargs.get('layer2_initial_weights', None)
         if W2inits:
             self.W2 = W2inits[0]
@@ -44,6 +45,7 @@ class LevenbergMarquardBackprop():
 
         self.mu = 0.01
         self.theta = 10.
+        self.rms = 0.
 
 
     def get_response(self, P, W1=None, b1vec=None, W2=None, b2vec=None):
@@ -159,10 +161,29 @@ class LevenbergMarquardBackprop():
         raise IndexError('Value l out of bounds: {}'.format(l))
 
 
+    def get_v_from_error(self, ERR):
+
+        """
+        This function takes the error ERR, which is a 2-dimensional
+        numpy array of shape (S2, Q).
+
+        v is constructed as per Hagan eq. (12.35), which is a numpy
+        array of shape (S2 * Q, 1)
+        """
+
+        Q = ERR.shape[1]
+        v = np.zeros((self.S2 * Q, 1))
+        for q in range(Q):
+            v[q * self.S1: (q+1) * self.S1] = ERR[:, [q]]
+
+        return v
+
+
     def weights_to_x(self, W1=None, b1vec=None, W2=None, b2vec=None):
 
         """
-        This function returns the vector x as in Hagan eq. (12.36)
+        This function returns the vector x as in Hagan eq. (12.36).
+        However, here we return it as a numpy column vector.
 
         Any argument weight that is None, is taken from self by
         the same name.
@@ -195,7 +216,7 @@ class LevenbergMarquardBackprop():
         x[w1b1_cnt:w1b1w2_cnt] = W2.reshape((w2_cnt))
         x[w1b1w2_cnt:w1b1w2b2_cnt] = b2vec.reshape((b2_cnt))
 
-        return x
+        return x.reshape((w1b1w2b2_cnt, 1))
 
 
     def x_to_weights(self, x):
@@ -269,7 +290,9 @@ class LevenbergMarquardBackprop():
 
         # 1b. Calculate the errors
         ERR = y - A2
-        rms = self.get_rms_error()
+        self.rms = self.get_rms_error()
+        v_cur = self.get_v_from_error(ERR)
+        x_cur = self.weights_to_x()
 
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
@@ -326,19 +349,18 @@ class LevenbergMarquardBackprop():
             import ipdb
             ipdb.set_trace()
 
-            dx_k = -np.dot(det_inv_jt, ERR)
+            # Convert the error to a columns vector as per Hagan eq. 12.35
+            dx = -np.dot(det_inv_jt, v_cur)
     
             # 4a. Recompute rms
-            xk = self.get_x()
-            x_peek = xk + dx_k.reshape(xk.shape)
-    
+            x_peek = x_cur + dx
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
-    
-            # 4b. Update
-            if rms_peek < rms:
 
-                rms = rms_peek
+            # 4b. Update
+            if rms_peek < self.rms:
+
+                self.rms = rms_peek
                 self.mu /= self.theta
                 self.W1 = W1
                 self.b1vec = b1vec
