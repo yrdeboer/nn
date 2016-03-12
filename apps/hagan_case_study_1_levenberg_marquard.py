@@ -133,13 +133,15 @@ for i in range(1, iteration_count):
 
     sp.train_step()
 
-    if i in plot_points:
-
-        rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
-        rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
+    print('i = {} rms now: {}\n'.format(i, sp.rms))
 
 
-        print('Iteration: {} rms_trn: {} rms_val'.format(i, rms_trn, rms_val))
+    # if i in plot_points:
+
+    #     rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
+    #     rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
+
+    #     print('Iteration: {} rms_trn: {} rms_val'.format(i, rms_trn, rms_val))
 
         # plt.subplot(2,1,1)
         # plt.scatter(i, rms_trn, c='b')

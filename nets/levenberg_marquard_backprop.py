@@ -13,6 +13,8 @@ class LevenbergMarquardBackprop():
         self.f2 = kwargs.get('layer2_transfer_function', None)
         self.df1 = kwargs.get('layer1_transfer_function_derivative', None)
         self.df2 = kwargs.get('layer2_transfer_function_derivative', None)
+        self.mu = kwargs.get('mu', 0.01)
+        self.theta = kwargs.get('theta', 1.5)
 
         training_data = kwargs.get('training_data', None)
         if training_data:
@@ -43,12 +45,13 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 self.S2).reshape((self.S2, 1)) - 0.5) * mult_factor
 
-        self.mu = 0.01
-        self.theta = 10.
-        self.rms = 0.
 
-
-    def get_response(self, P, W1=None, b1vec=None, W2=None, b2vec=None):
+    def get_response(self,
+                     P,
+                     W1=np.array([]),
+                     b1vec=np.array([]),
+                     W2=np.array([]),
+                     b2vec=np.array([])):
 
         """
         This function returns the response of the net.
@@ -57,13 +60,13 @@ class LevenbergMarquardBackprop():
         those are used.
         """
 
-        if not W1:
+        if not W1.any():
             W1 = self.W1
-        if not b1vec:
+        if not b1vec.any():
             b1vec = self.b1vec
-        if not W2:
+        if not W2.any():
             W2 = self.W2
-        if not b2vec:
+        if not b2vec.any():
             b2vec = self.b2vec
 
         N1 = np.dot(W1, P) + b1vec
@@ -179,7 +182,11 @@ class LevenbergMarquardBackprop():
         return v
 
 
-    def weights_to_x(self, W1=None, b1vec=None, W2=None, b2vec=None):
+    def weights_to_x(self,
+                     W1=np.array([]),
+                     b1vec=np.array([]),
+                     W2=np.array([]),
+                     b2vec=np.array([])):
 
         """
         This function returns the vector x as in Hagan eq. (12.36).
@@ -202,13 +209,13 @@ class LevenbergMarquardBackprop():
 
         x = np.zeros(w1b1w2b2_cnt)
 
-        if not W1:
+        if not W1.any():
             W1 = self.W1
-        if not b1vec:
+        if not b1vec.any():
             b1vec = self.b1vec
-        if not W2:
+        if not W2.any():
             W2 = self.W2
-        if not b2vec:
+        if not b2vec.any():
             b2vec = self.b2vec
 
         x[0:w1_cnt] = W1.reshape((w1_cnt))
@@ -239,15 +246,19 @@ class LevenbergMarquardBackprop():
         w1b1w2b2_cnt = w1b1w2_cnt + b2_cnt
 
         W1 = x[0:w1_cnt].reshape((self.S1, R))
-        b1vec = x[w1_cnt:w1b1_cnt].reshape((self.S1))
+        b1vec = x[w1_cnt:w1b1_cnt].reshape((self.S1, 1))
         W2 = x[w1b1_cnt:w1b1w2_cnt].reshape((self.S2, self.S1))
-        b2vec = x[w1b1w2_cnt:w1b1w2b2_cnt].reshape((self.S2))
+        b2vec = x[w1b1w2_cnt:w1b1w2b2_cnt].reshape((self.S2, 1))
 
         return (W1, b1vec, W2, b2vec)
 
 
 
-    def get_rms_error(self, W1=None, b1vec=None, W2=None, b2vec=None):
+    def get_rms_error(self,
+                      W1=np.array([]),
+                      b1vec=np.array([]),
+                      W2=np.array([]),
+                      b2vec=np.array([])):
 
         Q = self.V.shape[1]
 
@@ -274,7 +285,7 @@ class LevenbergMarquardBackprop():
         W2 = self.W2
         b2vec = self.b2vec
         S1 = self.S1
-        S2 = self.S1
+        S2 = self.S2
         f1 = self.f1
         f2 = self.f2
         df1 = self.df1
@@ -291,6 +302,9 @@ class LevenbergMarquardBackprop():
         # 1b. Calculate the errors
         ERR = y - A2
         self.rms = self.get_rms_error()
+
+        print('self.rms init to: {}'.format(self.rms))
+
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
 
@@ -320,6 +334,8 @@ class LevenbergMarquardBackprop():
         Ncol_j =  S1 * R + S1 + S2 * S1 + S2
 
         self.Jac = np.zeros((Nrow_j, Ncol_j))
+        J = self.Jac
+        JT = np.transpose(J)
 
         for h in range(Nrow_j):
             for l in range(Ncol_j):
@@ -333,16 +349,25 @@ class LevenbergMarquardBackprop():
 
                 # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
                 a = self.get_a(l, h, m-1, A1, A2)
+
+                # print('h={} l={} a={}'.format(h,l,a))
                 
                 self.Jac[h,l] = s * a
 
-                J = self.Jac
-                JT = np.transpose(J)
+        J = self.Jac
+        JT = np.transpose(J)
+        JTJ = np.dot(JT, J) 
 
+        k_max = 100
+        k=0
         while True:
+            
+            if k > k_max:
+                raise ValueError('Too many tries, mu now: {}'.format(self.mu))
+
 
             # 3. Solve eq. (12.32) to obtain dx_k
-            det = np.dot(JT, J) + self.mu * np.identity(Ncol_j)
+            det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
             det_inv_jt = np.dot(det_inv, np.transpose(J))
 
@@ -352,7 +377,15 @@ class LevenbergMarquardBackprop():
             # 4a. Recompute rms
             x_peek = x_cur + dx
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
+
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
+
+            print('k={} mu={} rms_peek={} x={} dx={}'.format(
+                k,
+                self.mu,
+                rms_peek,
+                np.transpose(x_cur),
+                np.transpose(dx)))
 
             # 4b. Update
             if rms_peek < self.rms:
@@ -368,6 +401,8 @@ class LevenbergMarquardBackprop():
 
             else:
                 self.mu *= self.theta
+
+            k+=1
     
 
     def print_weights(self):
