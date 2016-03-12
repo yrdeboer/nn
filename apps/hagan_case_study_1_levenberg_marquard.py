@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import utils as nn_utils
-from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
+from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 
 PYTHONPATH = os.environ.get('PYTHONPATH', None)
 if not PYTHONPATH:
@@ -100,31 +100,6 @@ def plot_data():
 
     plt.show()
     
-plot_data()
-exit()
-
-def get_sse(W1, b1vec, W2, b2vec, V, y):
-
-    """
-    The sum squared error is calculated
-    from the current network weights and
-    a data set of inputs p and targets t.
-    """
-
-    yhat = get_network_response(W1, b1vec, W2, b2vec, V, y)
-
-    return np.sum(np.power(y - yhat, 2))
-
-
-
-    # Plot stats
-    plot(W1, b1vec, W2, b2vec, V, y, ssevecx, ssevecy)
-
-# backprop()
-
-# plot_data()
-
-
 
 (train_input, train_target, val_inp, val_tar) = get_data_sets()
 
@@ -133,7 +108,6 @@ kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
 kwargs['layer1_neuron_count'] = 3
 kwargs['layer2_neuron_count'] = 1
-kwargs['learning_rate'] = 0.01
 
 kwargs['layer1_transfer_function'] = nn_utils.tansig
 kwargs['layer2_transfer_function'] = nn_utils.purelin
@@ -141,19 +115,19 @@ kwargs['layer1_transfer_function_derivative'] = nn_utils.dtansig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
 # Instantiate backprop with init values
-sp = SimpleTwoLayerBackprop(** kwargs)
+sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10000
+iteration_count = 10
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
-plt.subplot(2,1,1)
-plt.axis([1, 10. * iteration_count, 1e-5, 10.])
-plt.yscale('log')
-plt.xscale('log')
-plt.ion()
-plt.show()
+# plt.subplot(2,1,1)
+# plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+# plt.yscale('log')
+# plt.xscale('log')
+# plt.ion()
+# plt.show()
 
 for i in range(1, iteration_count):
 
@@ -167,15 +141,15 @@ for i in range(1, iteration_count):
 
         print('Iteration: {} rms_trn: {} rms_val'.format(i, rms_trn, rms_val))
 
-        plt.subplot(2,1,1)
-        plt.scatter(i, rms_trn, c='b')
-        plt.scatter(i, rms_val, c='r')
-        plt.draw()
+        # plt.subplot(2,1,1)
+        # plt.scatter(i, rms_trn, c='b')
+        # plt.scatter(i, rms_val, c='r')
+        # plt.draw()
 
-        plt.subplot(2,1,2)
-        plt.cla()
-        plt.scatter(train_target[0], sp.get_response(train_input), c='b')
-        plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
-        plt.draw()
+        # plt.subplot(2,1,2)
+        # plt.cla()
+        # plt.scatter(train_target[0], sp.get_response(train_input), c='b')
+        # plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
+        # plt.draw()
 
-plt.savefig('hagan_case_study_1.png')
+# plt.savefig('hagan_case_study_1.png')
