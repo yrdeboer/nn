@@ -346,9 +346,6 @@ class LevenbergMarquardBackprop():
             det_inv = np.linalg.inv(det)
             det_inv_jt = np.dot(det_inv, np.transpose(J))
 
-            import ipdb
-            ipdb.set_trace()
-
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv_jt, v_cur)
     
