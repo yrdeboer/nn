@@ -75,16 +75,13 @@ def get_data_sets():
             val_tar[:, [i_val]] = y[:, [i]]
             i_val += 1
 
-        if i_trn == 3:
-            break
-
     trn_inp = trn_inp[:, range(i_trn)]
     trn_tar = trn_tar[:, range(i_trn)]
     val_inp = val_inp[:, range(i_val)]
     val_tar = val_tar[:, range(i_val)]
 
-    # if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
-    #     raise ValueError('Sum of training and validation columns not correct')
+    if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
+        raise ValueError('Sum of training and validation columns not correct')
 
     return (trn_inp, trn_tar, val_inp, val_tar)
 
@@ -109,7 +106,7 @@ def plot_data():
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 3
+kwargs['layer1_neuron_count'] = 5
 kwargs['layer2_neuron_count'] = 1
 
 kwargs['layer1_transfer_function'] = nn_utils.tansig
@@ -120,43 +117,49 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 100
+iteration_count = 10000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
-# plt.subplot(2,1,1)
-# plt.axis([1, 10. * iteration_count, 1e-5, 10.])
-# plt.yscale('log')
-# plt.xscale('log')
-# plt.ion()
-# plt.show()
+plt.subplot(2,1,1)
+plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+plt.yscale('log')
+plt.xscale('log')
+plt.ion()
+plt.show()
 
 for i in range(1, iteration_count):
 
-    print('\nIteration {}:')
+    converged = sp.train_step()
 
-    sp.train_step()
+    if i in plot_points:
+        print('After iteration {}, rms now: {} g_norm = {}\n'.format(i, sp.rms, sp.g_norm))
 
-    print('After iteration {}, rms now: {}\n'.format(i, sp.rms))
+        rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
+        rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
+
+        print('Iteration: {} rms_true = {} rms_trn: {} rms_val'.format(
+            i,
+            sp.rms,
+            rms_trn,
+            rms_val))
+
+        plt.subplot(2,1,1)
+        plt.scatter(i, rms_trn, c='b')
+        plt.scatter(i, rms_val, c='r')
+        plt.draw()
+
+        plt.subplot(2,1,2)
+        plt.cla()
+        plt.scatter(train_target[0], sp.get_response(train_input), c='b')
+        plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
+        plt.draw()
+
+    if converged:
+        print('Premature convergence at iteration {}.'.format(i))
+        break
 
 
-    # if i in plot_points:
-
-    #     rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
-    #     rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
-
-    #     print('Iteration: {} rms_trn: {} rms_val'.format(i, rms_trn, rms_val))
-
-        # plt.subplot(2,1,1)
-        # plt.scatter(i, rms_trn, c='b')
-        # plt.scatter(i, rms_val, c='r')
-        # plt.draw()
-
-        # plt.subplot(2,1,2)
-        # plt.cla()
-        # plt.scatter(train_target[0], sp.get_response(train_input), c='b')
-        # plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
-        # plt.draw()
 
 # plt.savefig('hagan_case_study_1.png')

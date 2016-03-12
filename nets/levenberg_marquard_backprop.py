@@ -2,6 +2,9 @@ import numpy as np
 import utils as nn_utils
 
 
+np.set_printoptions(threshold=np.nan)
+
+
 class LevenbergMarquardBackprop():
 
     def __init__(self, * args, ** kwargs):
@@ -168,8 +171,7 @@ class LevenbergMarquardBackprop():
             j = l % self.R
             a = self.get_layer_output(m-1, A1, A2)[j,q]
 
-            print('    l={} i={} j={} q={} a={} (W1)'.format(
-                l,i,j,q,a))
+            print('    l={} i={} j={} q={} a={} (W1)'.format(l,i,j,q,a))
 
             return (m,i,a)
         
@@ -180,8 +182,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1R) % self.S1
             a = 1.0
 
-            print('    l={} i={} a={} (b1vec)'.format(
-                l,i,a))
+            print('    l={} i={} a={} (b1vec)'.format(l,i,a))
 
             return (m,i,a)
 
@@ -194,8 +195,7 @@ class LevenbergMarquardBackprop():
             j = (l - S1RS1) % self.S1
             a = self.get_layer_output(m-1, A1, A2)[j,q]
 
-            print('    l={} i={} j={} q={} a={} (W2)'.format(
-                l,i,j,q,a))
+            print('    l={} i={} j={} q={} a={} (W2)'.format(l,i,j,q,a))
 
             return (m,i,a)
 
@@ -206,8 +206,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1RS1S2S1) % self.S2
             a = 1.0
 
-            print('    l={} i={} a={} (b2vec)'.format(
-                l,i,a))
+            print('    l={} i={} a={} (b2vec)'.format(l,i,a))
 
             return (m,i,a)
 
@@ -307,6 +306,12 @@ class LevenbergMarquardBackprop():
 
     def train_step(self):
 
+        """
+        This function performs 1 iteration using Levenberg-Marquard.
+        It returns True if the algorithm has converged,
+        otherwise False.
+        """
+
         V = self.V                  # Input data shape = (R, Q)
         y = self.y                  # Input targets shape = (S2, Q)
         Q = V.shape[1]              # Input training vector count
@@ -322,7 +327,7 @@ class LevenbergMarquardBackprop():
         df1 = self.df1
         df2 = self.df2
 
-        print('R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
+        # print('  R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
 
         # Algorithm from Hagan p. 12-25
         # 
@@ -336,7 +341,7 @@ class LevenbergMarquardBackprop():
         ERR = y - A2
         self.rms = self.get_rms_error()
 
-        print('self.rms init to: {}'.format(self.rms))
+        print('  self.rms init to: {}'.format(self.rms))
 
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
@@ -359,10 +364,10 @@ class LevenbergMarquardBackprop():
             S_aug_1[:, range(q * S2, (q+1) * S2)] = S1q
 
         S_augs = (S_aug_1, S_aug_2)
-        print('S_augs[0].shape = {}\nS_augs[0] =\n{}'.format(
+        print('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
             S_augs[0].shape,
             S_augs[0]))
-        print('S_augs[1].shape = {}\nS_augs[1] =\n{}'.format(
+        print('  S_augs[1].shape = {}\n  S_augs[1] =\n{}'.format(
             S_augs[1].shape,
             S_augs[1]))
 
@@ -372,9 +377,10 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j =  S1 * R + S1 + S2 * S1 + S2
 
-        print('Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
+        print('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
         self.Jac = np.zeros((Nrow_j, Ncol_j))
+
         J = self.Jac
         JT = np.transpose(J)
 
@@ -397,17 +403,17 @@ class LevenbergMarquardBackprop():
         JT = np.transpose(J)
         JTJ = np.dot(JT, J) 
 
-        k_max = 100
+        g = 2. * np.dot(JT, v_cur)
+        self.g_norm = np.linalg.norm(g)
+
         k=0
 
-        print('J={} '.format(J))
-        print('x={} '.format(np.transpose(x_cur)))
+        print('  J={} '.format(J))
+        print('  x={} '.format(np.transpose(x_cur)))
 
         while True:
 
             k += 1
-            if k > k_max:
-                raise ValueError('Too many tries, mu now: {}'.format(self.mu))
 
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
@@ -423,11 +429,11 @@ class LevenbergMarquardBackprop():
 
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
 
-            print('k={} mu={} rms_peek={} dx={}'.format(
-                k,
-                self.mu,
-                rms_peek,
-                np.transpose(dx)))
+            # print('k={} mu={} rms_peek={} dx={}'.format(
+            #     k,
+            #     self.mu,
+            #     rms_peek,
+            #     np.transpose(dx)))
 
             # 4b. Update
             if rms_peek < self.rms:
@@ -444,6 +450,11 @@ class LevenbergMarquardBackprop():
             else:
                 self.mu *= self.theta
 
+        if self.mu > np.finfo('float64').max / self.theta:
+            print('Converged, breaking out, k = {} mu = {}'.format(k, self,mu))
+            return True
+
+        return False
    
 
     def print_weights(self):
