@@ -29,10 +29,8 @@ class LevenbergMarquardBackprop():
             self.b1vec = W1inits[1]
         else:
             mult_factor = .5
-            self.W1 = (np.random.random_sample(
-                (self.S1, self.R)) - 0.5).reshape(self.S1, self.R) * mult_factor
-            self.b1vec = (np.random.random_sample(
-                (self.S1)) - 0.5).reshape((self.S1, 1)) * mult_factor
+            self.W1 = (np.random.random_sample((self.S1, self.R)) - 0.5) * mult_factor
+            self.b1vec = (np.random.random_sample((self.S1, 1)) - 0.5) * mult_factor
 
 
         W2inits = kwargs.get('layer2_initial_weights', None)
@@ -40,10 +38,8 @@ class LevenbergMarquardBackprop():
             self.W2 = W2inits[0]
             self.b2vec = W2inits[1]
         else:
-            self.W2 = (np.random.random_sample(
-                self.S1) - 0.5).reshape(1, self.S1) * mult_factor
-            self.b2vec = (np.random.random_sample(
-                self.S2).reshape((self.S2, 1)) - 0.5) * mult_factor
+            self.W2 = (np.random.random_sample((self.S2, self.S1)) - 0.5) * mult_factor
+            self.b2vec = (np.random.random_sample((self.S2, 1)) - 0.5) * mult_factor
 
 
     def get_response(self,
@@ -137,6 +133,7 @@ class LevenbergMarquardBackprop():
 
         """
         This function returns a^(m-1)_(j,q) as in Hagan eq. (12.43)
+        This is a float of shape ()
         """
 
         S1R = self.S1 * self.R
@@ -144,10 +141,18 @@ class LevenbergMarquardBackprop():
 
             A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
             j, q = self.get_jq(h)
+
+            print('h={} l={} j={} q={} (W1)'.format(
+                h,l,j,q))
+
             return A_mm1[j,q]
         
         S1RS1 = S1R + self.S1
         if l < S1RS1:
+
+            print('h={} l={} (b1vec)'.format(
+                h,l))
+
             return 1.0
 
         S1RS1S2S1 = S1RS1 + self.S2 * self.S1
@@ -155,10 +160,18 @@ class LevenbergMarquardBackprop():
 
             A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
             j, q = self.get_jq(h)
+
+            print('h={} l={} j={} q={} (W2)'.format(
+                h,l,j,q))
+
             return A_mm1[j,q]
 
         S1RS1S2S1S2 = S1RS1S2S1 + self.S2
         if l < S1RS1S2S1S2:
+
+            print('h={} l={} (b2vec)'.format(
+                h,l))
+
             return 1.0
 
         raise IndexError('Value l out of bounds: {}'.format(l))
@@ -177,7 +190,7 @@ class LevenbergMarquardBackprop():
         Q = ERR.shape[1]
         v = np.zeros((self.S2 * Q, 1))
         for q in range(Q):
-            v[q * self.S1: (q+1) * self.S1] = ERR[:, [q]]
+            v[q * self.S2: (q+1) * self.S2] = ERR[:, [q]]
 
         return v
 
@@ -291,6 +304,8 @@ class LevenbergMarquardBackprop():
         df1 = self.df1
         df2 = self.df2
 
+        print('R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
+
         # Algorithm from Hagan p. 12-25
         # 
         # 1a. Compute network in- and out-puts N2 and A2
@@ -312,7 +327,7 @@ class LevenbergMarquardBackprop():
         #     using Eq. (12.46) and Eq. (12.47) and
         #     also the augmented Marquard sensitiviy
         S_aug_2 = np.zeros((S2, S2 * Q))
-        S_aug_1 = np.zeros((S1, S1 * Q))
+        S_aug_1 = np.zeros((S1, S2 * Q))
         for q in range(Q):
 
             F2q = nn_utils.get_sensitivity_diag(df2, N2[:, [q]])
@@ -323,15 +338,23 @@ class LevenbergMarquardBackprop():
             S1q = np.dot(
                 np.dot(F1q, np.transpose(W2)),
                 S2q)
-            S_aug_1[:, range(q * S1, (q+1) * S1)] = S1q
+            S_aug_1[:, range(q * S2, (q+1) * S2)] = S1q
 
         S_augs = (S_aug_1, S_aug_2)
+        print('S_augs[0].shape = {}\nS_augs[0] =\n{}'.format(
+            S_augs[0].shape,
+            S_augs[0]))
+        print('S_augs[1].shape = {}\nS_augs[1] =\n{}'.format(
+            S_augs[1].shape,
+            S_augs[1]))
 
         # 2b. Compute the elements of the Jacobian using
         #     eqs. (12.43) and (12.44)
 
         Nrow_j = S2 * Q
         Ncol_j =  S1 * R + S1 + S2 * S1 + S2
+
+        print('Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
         self.Jac = np.zeros((Nrow_j, Ncol_j))
         J = self.Jac
@@ -347,11 +370,11 @@ class LevenbergMarquardBackprop():
                 q = h / S2
                 s = S_augs[m-1][i][q+i]
 
+                print('S_augs[{}][{}][{}] = {}'.format(m-1,i,q+i,s))
+
                 # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
                 a = self.get_a(l, h, m-1, A1, A2)
-
-                # print('h={} l={} a={}'.format(h,l,a))
-                
+               
                 self.Jac[h,l] = s * a
 
         J = self.Jac
@@ -360,11 +383,15 @@ class LevenbergMarquardBackprop():
 
         k_max = 100
         k=0
+
+        print('J={} '.format(J))
+        print('x={} '.format(np.transpose(x_cur)))
+
         while True:
-            
+
+            k += 1
             if k > k_max:
                 raise ValueError('Too many tries, mu now: {}'.format(self.mu))
-
 
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
@@ -380,11 +407,10 @@ class LevenbergMarquardBackprop():
 
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
 
-            print('k={} mu={} rms_peek={} x={} dx={}'.format(
+            print('k={} mu={} rms_peek={} dx={}'.format(
                 k,
                 self.mu,
                 rms_peek,
-                np.transpose(x_cur),
                 np.transpose(dx)))
 
             # 4b. Update
@@ -402,8 +428,7 @@ class LevenbergMarquardBackprop():
             else:
                 self.mu *= self.theta
 
-            k+=1
-    
+   
 
     def print_weights(self):
 

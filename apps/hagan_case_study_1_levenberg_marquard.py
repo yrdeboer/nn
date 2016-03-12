@@ -75,13 +75,16 @@ def get_data_sets():
             val_tar[:, [i_val]] = y[:, [i]]
             i_val += 1
 
+        if i_trn == 3:
+            break
+
     trn_inp = trn_inp[:, range(i_trn)]
     trn_tar = trn_tar[:, range(i_trn)]
     val_inp = val_inp[:, range(i_val)]
     val_tar = val_tar[:, range(i_val)]
 
-    if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
-        raise ValueError('Sum of training and validation columns not correct')
+    # if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
+    #     raise ValueError('Sum of training and validation columns not correct')
 
     return (trn_inp, trn_tar, val_inp, val_tar)
 
