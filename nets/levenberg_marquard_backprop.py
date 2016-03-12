@@ -98,22 +98,6 @@ class LevenbergMarquardBackprop():
 
         raise IndexError('Value m out of bounds: {} (neuron count)'.format(m))
             
-    def get_layer_output(self, m, A1, A2):
-
-        """
-        This function returns the layer output, for layer m.
-        For the "0'th layer" (m = 0) the input is returned.
-        """
-
-        if m == 0:
-            return self.V
-        elif m == 1:
-            return A1
-        elif m == 2:
-            return A2
-
-        raise IndexError('Value m out of bounds: {} (layer output)'.format(m))
-
 
     def get_jq(self, h):
 
@@ -128,68 +112,6 @@ class LevenbergMarquardBackprop():
 
         return (h % self.S2, h / self.S2)
         
-
-    def get_a_i(self, l, h, m_minus_1, A1, A2):
-
-        """
-        This function returns a 2-tuple.
-        
-        The first element is a^(m-1)_(j,q) as in Hagan eq. (12.43)
-        This is a float of shape ().
-
-        The second element is an integer i, the index of the neuron of the
-        appropriate layer, depending on l and h, needed to fetch
-        the appropriate sensitivity from the augmented Levenberg-Marquard
-        sensitivity matrices.
-        """
-
-        S1R = self.S1 * self.R
-        if l < S1R:
-
-            A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
-            j, q = self.get_jq(h)
-
-            i = l / self.R
-
-            print('h={} l={} i={} j={} q={} (W1)'.format(
-                h,l,i,j,q))
-
-            return (A_mm1[j,q], i)
-        
-        S1RS1 = S1R + self.S1
-        if l < S1RS1:
-
-            i = (l - S1R)
-
-            print('h={} l={} i={} (b1vec)'.format(
-                h,l,i))
-
-            return (1.0, i)
-
-        S1RS1S2S1 = S1RS1 + self.S2 * self.S1
-        if l < S1RS1S2S1:
-
-            A_mm1 = self.get_layer_output(m_minus_1, A1, A2)
-            j, q = self.get_jq(h)
-
-            i = (l - S1RS1) / self.S1
-
-            print('h={} l={} i={} j={} q={} (W2)'.format(
-                h,l,i,j,q))
-
-            return (A_mm1[j,q], i)
-
-        S1RS1S2S1S2 = S1RS1S2S1 + self.S2
-        if l < S1RS1S2S1S2:
-
-            i = (l - S1RS1S2S1)
-
-            print('h={} l={} (b2vec)'.format(
-                h,l))
-
-            return (1.0, i)
-
-        raise IndexError('Value l out of bounds: {}'.format(l))
 
 
     def get_v_from_error(self, ERR):
@@ -208,6 +130,88 @@ class LevenbergMarquardBackprop():
             v[q * self.S2: (q+1) * self.S2] = ERR[:, [q]]
 
         return v
+
+
+    def get_layer_output(self, m, A1, A2):
+
+        """
+        This function returns the layer output, for layer m.
+        For the "0'th layer" (m = 0) the input is returned.
+        """
+
+        if m == 0:
+            return self.V
+        elif m == 1:
+            return A1
+        elif m == 2:
+            return A2
+
+        raise IndexError('Value m out of bounds: {} (layer output)'.format(m))
+
+
+    def get_mia(self, h, l, q, A1, A2):
+
+        """
+        This function returns a 3-tuple, with a,i and m, where:
+
+        m: Layer 1 or 2
+        i: The i't relevant neuron in layer m
+        a: The element a^(m-1)_(j,q) as per Hagan eq. (12.43)        
+        """
+
+        S1R = self.S1 * self.R
+        if l < S1R:
+
+            m = 1
+            i = h % self.S1
+
+            j = l % self.R
+            a = self.get_layer_output(m-1, A1, A2)[j,q]
+
+            print('    l={} i={} j={} q={} a={} (W1)'.format(
+                l,i,j,q,a))
+
+            return (m,i,a)
+        
+        S1RS1 = S1R + self.S1
+        if l < S1RS1:
+
+            m = 1
+            i = (l - S1R) % self.S1
+            a = 1.0
+
+            print('    l={} i={} a={} (b1vec)'.format(
+                l,i,a))
+
+            return (m,i,a)
+
+        S1RS1S2S1 = S1RS1 + self.S2 * self.S1
+        if l < S1RS1S2S1:
+
+            m = 2
+            i = (l - S1RS1) % self.S2
+
+            j = (l - S1RS1) % self.S1
+            a = self.get_layer_output(m-1, A1, A2)[j,q]
+
+            print('    l={} i={} j={} q={} a={} (W2)'.format(
+                l,i,j,q,a))
+
+            return (m,i,a)
+
+        S1RS1S2S1S2 = S1RS1S2S1 + self.S2
+        if l < S1RS1S2S1S2:
+
+            m = 2
+            i = (l - S1RS1S2S1) % self.S2
+            a = 1.0
+
+            print('    l={} i={} a={} (b2vec)'.format(
+                l,i,a))
+
+            return (m,i,a)
+
+        raise IndexError('Value l out of bounds: {}'.format(l))
 
 
     def weights_to_x(self,
@@ -279,7 +283,6 @@ class LevenbergMarquardBackprop():
         b2vec = x[w1b1w2_cnt:w1b1w2b2_cnt].reshape((self.S2, 1))
 
         return (W1, b1vec, W2, b2vec)
-
 
 
     def get_rms_error(self,
@@ -376,20 +379,17 @@ class LevenbergMarquardBackprop():
         JT = np.transpose(J)
 
         for h in range(Nrow_j):
+
+            print('  h = {}'.format(h))
+
             for l in range(Ncol_j):
 
-                # Calculate s^m_(i,h)
-                m = self.get_layer(l)
-                n = self.get_layer_dim(m)
+                q = h / self.S2
+                (m, i, a) = self.get_mia(h, l, q, A1, A2)
 
-                q = h / S2
+                s = S_augs[m-1][i][h]
 
-                # Calculate a^(m-1)_(j,q) as per Hagan eqs. (12.43) and (12.44)
-                (a, i) = self.get_a_i(l, h, m-1, A1, A2)
-
-                s = S_augs[m-1][i][q+i]
-
-                print('S_augs[{}][{}][{}] = {}'.format(m-1,i,q+i,s))
+                print('      S_augs[{}][{}][{}] = {}\n'.format(m-1,i,h,s))
                
                 self.Jac[h,l] = s * a
 

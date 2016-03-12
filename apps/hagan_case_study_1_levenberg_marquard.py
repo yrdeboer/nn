@@ -120,7 +120,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10
+iteration_count = 100
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -134,9 +134,11 @@ plot_points = [int(i) for i in list(logspace)]
 
 for i in range(1, iteration_count):
 
+    print('\nIteration {}:')
+
     sp.train_step()
 
-    print('i = {} rms now: {}\n'.format(i, sp.rms))
+    print('After iteration {}, rms now: {}\n'.format(i, sp.rms))
 
 
     # if i in plot_points:
