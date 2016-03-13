@@ -1,6 +1,21 @@
 import numpy as np
 
 
+DEBUG = False
+
+
+def print_dbg(* args):
+
+    if not DEBUG:
+        return 
+
+    s = ''
+    for arg in args:
+        s += arg
+
+    print(s)
+
+
 def logsig(x):
 
     return 1. / (1. + np.exp(-x))

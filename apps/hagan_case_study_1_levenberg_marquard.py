@@ -3,12 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils as nn_utils
 from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
+from utils import print_dbg
+
 
 PYTHONPATH = os.environ.get('PYTHONPATH', None)
 if not PYTHONPATH:
     raise ValueError('PYTHONPATH not set')
 
-DEBUG = True
+DEBUG = False
 
 DATA_FILE_P = '{}/hagan_case_study_data/ball_p.txt'.format(PYTHONPATH)
 DATA_FILE_T = '{}/hagan_case_study_data/ball_t.txt'.format(PYTHONPATH)
@@ -129,6 +131,9 @@ def plot_data():
 
 (train_input, train_target, val_inp, val_tar) = get_data_sets()
 
+
+print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
+
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
@@ -148,7 +153,7 @@ if DEBUG:
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-print('Weights:')
+print_dbg('Weights:')
 sp.print_weights()
 
 iteration_count = 10000
@@ -168,16 +173,12 @@ for i in range(1, iteration_count):
     converged = sp.train_step()
 
     if i in plot_points or converged:
-        print('After iteration {}, rms now: {} g_norm = {}\n'.format(i, sp.rms, sp.g_norm))
 
-        rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
+        rms_trn = sp.rms
         rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
 
-        print('Iteration: {} rms_true = {} rms_trn: {} rms_val'.format(
-            i,
-            sp.rms,
-            rms_trn,
-            rms_val))
+        print('It={:6} rms_trn={:.5f}  rms_val={:.5f} '.format(i, rms_trn[0,0], rms_val[0,0])),
+        print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
 
         plt.subplot(2,1,1)
         plt.scatter(i, rms_trn, c='b')

@@ -1,5 +1,6 @@
 import numpy as np
 import utils as nn_utils
+from utils import print_dbg
 
 
 np.set_printoptions(threshold=np.nan)
@@ -24,7 +25,7 @@ class LevenbergMarquardBackprop():
             self.V = training_data[0]
             self.y = training_data[1]
         else:
-            print('Warning: no training data')
+            print_dbg('Warning: no training data')
 
         W1inits = kwargs.get('layer1_initial_weights', None)
         if W1inits:
@@ -171,7 +172,7 @@ class LevenbergMarquardBackprop():
             j = l % self.R
             a = self.get_layer_output(m-1, A1, A2)[j,q]
 
-            print('    l={} i={} j={} q={} a={} (W1)'.format(l,i,j,q,a))
+            print_dbg('    l={} i={} j={} q={} a={} (W1)'.format(l,i,j,q,a))
 
             return (m,i,a)
         
@@ -182,7 +183,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1R) % self.S1
             a = 1.0
 
-            print('    l={} i={} a={} (b1vec)'.format(l,i,a))
+            print_dbg('    l={} i={} a={} (b1vec)'.format(l,i,a))
 
             return (m,i,a)
 
@@ -195,7 +196,7 @@ class LevenbergMarquardBackprop():
             j = (l - S1RS1) % self.S1
             a = self.get_layer_output(m-1, A1, A2)[j,q]
 
-            print('    l={} i={} j={} q={} a={} (W2)'.format(l,i,j,q,a))
+            print_dbg('    l={} i={} j={} q={} a={} (W2)'.format(l,i,j,q,a))
 
             return (m,i,a)
 
@@ -206,7 +207,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1RS1S2S1) % self.S2
             a = 1.0
 
-            print('    l={} i={} a={} (b2vec)'.format(l,i,a))
+            print_dbg('    l={} i={} a={} (b2vec)'.format(l,i,a))
 
             return (m,i,a)
 
@@ -327,7 +328,7 @@ class LevenbergMarquardBackprop():
         df1 = self.df1
         df2 = self.df2
 
-        # print('  R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
+        # print_dbg('  R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
 
         # Algorithm from Hagan p. 12-25
         # 
@@ -337,11 +338,17 @@ class LevenbergMarquardBackprop():
         N2 = np.dot(W2, A1) + b2vec
         A2 = self.get_response(V)
 
+        print_dbg('N1:\n{}'.format(N1))
+        print_dbg('A1:\n{}'.format(A1))
+        print_dbg('N2:\n{}'.format(N2))
+        print_dbg('A2:\n{}'.format(A2))
+
+
         # 1b. Calculate the errors
         ERR = y - A2
         self.rms = self.get_rms_error()
 
-        print('  self.rms init to: {}'.format(self.rms))
+        print_dbg('  self.rms init to: {}'.format(self.rms))
 
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
@@ -351,6 +358,7 @@ class LevenbergMarquardBackprop():
         #     also the augmented Marquard sensitiviy
         S_aug_2 = np.zeros((S2, S2 * Q))
         S_aug_1 = np.zeros((S1, S2 * Q))
+
         for q in range(Q):
 
             F2q = nn_utils.get_sensitivity_diag(df2, N2[:, [q]])
@@ -364,10 +372,10 @@ class LevenbergMarquardBackprop():
             S_aug_1[:, range(q * S2, (q+1) * S2)] = S1q
 
         S_augs = (S_aug_1, S_aug_2)
-        print('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
+        print_dbg('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
             S_augs[0].shape,
             S_augs[0]))
-        print('  S_augs[1].shape = {}\n  S_augs[1] =\n{}'.format(
+        print_dbg('  S_augs[1].shape = {}\n  S_augs[1] =\n{}'.format(
             S_augs[1].shape,
             S_augs[1]))
 
@@ -377,7 +385,7 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j =  S1 * R + S1 + S2 * S1 + S2
 
-        print('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
+        print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
         self.Jac = np.zeros((Nrow_j, Ncol_j))
 
@@ -386,7 +394,7 @@ class LevenbergMarquardBackprop():
 
         for h in range(Nrow_j):
 
-            print('  h = {}'.format(h))
+            print_dbg('  h = {}'.format(h))
 
             for l in range(Ncol_j):
 
@@ -395,7 +403,7 @@ class LevenbergMarquardBackprop():
 
                 s = S_augs[m-1][i][h]
 
-                print('      S_augs[{}][{}][{}] = {}\n'.format(m-1,i,h,s))
+                print_dbg('      S_augs[{}][{}][{}] = {}\n'.format(m-1,i,h,s))
                
                 self.Jac[h,l] = s * a
 
@@ -408,14 +416,14 @@ class LevenbergMarquardBackprop():
 
         k=0
 
-        print('  J={} '.format(J))
-        print('  x={} '.format(np.transpose(x_cur)))
+        print_dbg('  J={} '.format(J))
+        print_dbg('  x={} '.format(np.transpose(x_cur)))
 
         while True:
 
             k += 1
 
-            print('  Before multiply: k={} mu={}'.format(k,self.mu))
+            print_dbg('  Before multiply: k={} mu={}'.format(k,self.mu))
             import sys
             sys.stdout.flush()
 
@@ -433,7 +441,7 @@ class LevenbergMarquardBackprop():
 
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
 
-            # print('k={} mu={} rms_peek={} dx={}'.format(
+            # print_dbg('k={} mu={} rms_peek={} dx={}'.format(
             #     k,
             #     self.mu,
             #     rms_peek,
@@ -455,7 +463,7 @@ class LevenbergMarquardBackprop():
                 self.mu *= self.theta
 
             if self.mu == np.inf:
-                print('Converged, breaking out, k = {} mu = {}'.format(k, self.mu))
+                print_dbg('Converged, breaking out, k = {} mu = {}'.format(k, self.mu))
                 return True
 
         return False
@@ -463,7 +471,7 @@ class LevenbergMarquardBackprop():
 
     def print_weights(self):
 
-        print('\nW1    = {}'.format(self.W1))
-        print('b1vec = {}'.format(self.b1vec))
-        print('W2    = {}'.format(self.W2))
-        print('b2vec = {}'.format(self.b2vec))
+        print_dbg('\nW1    = {}'.format(self.W1))
+        print_dbg('b1vec = {}'.format(self.b1vec))
+        print_dbg('W2    = {}'.format(self.W2))
+        print_dbg('b2vec = {}'.format(self.b2vec))

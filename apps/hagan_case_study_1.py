@@ -168,7 +168,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = SimpleTwoLayerBackprop(** kwargs)
 
-iteration_count = 10000
+iteration_count = 100000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
