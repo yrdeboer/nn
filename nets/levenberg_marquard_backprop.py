@@ -428,10 +428,11 @@ class LevenbergMarquardBackprop():
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
-            det_inv_jt = np.dot(det_inv, np.transpose(J))
+
+            jtv = np.dot(np.transpose(J), v_cur)
 
             # Convert the error to a columns vector as per Hagan eq. 12.35
-            dx = -np.dot(det_inv_jt, v_cur)
+            dx = -np.dot(det_inv, jtv)
     
             # 4a. Recompute rms
             x_peek = x_cur + dx
