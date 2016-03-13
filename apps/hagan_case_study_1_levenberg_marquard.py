@@ -92,7 +92,7 @@ def get_data_sets():
 
         for i in range(Ncol):
     
-            if np.random.random() < .7:
+            if np.random.random() < .85:
                 trn_inp[:, [i_trn]] = V[:, [i]]
                 trn_tar[:, [i_trn]] = y[:, [i]]
                 i_trn += 1
@@ -137,7 +137,7 @@ print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 5
+kwargs['layer1_neuron_count'] = 10
 kwargs['layer2_neuron_count'] = 1
 
 kwargs['layer1_transfer_function'] = nn_utils.tansig
@@ -156,7 +156,7 @@ sp = LevenbergMarquardBackprop(** kwargs)
 print_dbg('Weights:')
 sp.print_weights()
 
-iteration_count = 10000
+iteration_count = 1000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -194,4 +194,4 @@ for i in range(1, iteration_count):
         if converged:
             break
 
-# plt.savefig('hagan_case_study_1.png')
+plt.savefig('hagan_case_study_1_lb.png')

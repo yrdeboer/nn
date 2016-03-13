@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 
 DEBUG = False
@@ -14,6 +15,7 @@ def print_dbg(* args):
         s += arg
 
     print(s)
+    sys.stdout.flush()
 
 
 def logsig(x):

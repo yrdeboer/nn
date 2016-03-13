@@ -18,7 +18,7 @@ class LevenbergMarquardBackprop():
         self.df1 = kwargs.get('layer1_transfer_function_derivative', None)
         self.df2 = kwargs.get('layer2_transfer_function_derivative', None)
         self.mu = kwargs.get('mu', 0.01)
-        self.theta = kwargs.get('theta', 1.5)
+        self.theta = kwargs.get('theta', 10.0)
 
         training_data = kwargs.get('training_data', None)
         if training_data:
@@ -424,8 +424,6 @@ class LevenbergMarquardBackprop():
             k += 1
 
             print_dbg('  Before multiply: k={} mu={}'.format(k,self.mu))
-            import sys
-            sys.stdout.flush()
 
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
