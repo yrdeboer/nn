@@ -415,6 +415,10 @@ class LevenbergMarquardBackprop():
 
             k += 1
 
+            print('  Before multiply: k={} mu={}'.format(k,self.mu))
+            import sys
+            sys.stdout.flush()
+
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
@@ -450,9 +454,9 @@ class LevenbergMarquardBackprop():
             else:
                 self.mu *= self.theta
 
-        if self.mu > np.finfo('float64').max / self.theta:
-            print('Converged, breaking out, k = {} mu = {}'.format(k, self,mu))
-            return True
+            if self.mu == np.inf:
+                print('Converged, breaking out, k = {} mu = {}'.format(k, self.mu))
+                return True
 
         return False
    

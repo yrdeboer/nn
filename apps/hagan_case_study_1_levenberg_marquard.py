@@ -8,8 +8,20 @@ PYTHONPATH = os.environ.get('PYTHONPATH', None)
 if not PYTHONPATH:
     raise ValueError('PYTHONPATH not set')
 
+DEBUG = True
+
 DATA_FILE_P = '{}/hagan_case_study_data/ball_p.txt'.format(PYTHONPATH)
 DATA_FILE_T = '{}/hagan_case_study_data/ball_t.txt'.format(PYTHONPATH)
+
+
+def get_debug_weights():
+
+    W1 = np.array([[ 0.55324921,  0.50472091],[ 0.47403968,  0.52325356],[ 0.10596892,  0.18947488],[ 0.23209849,  0.76365438],[ 0.65728602,  0.28293854]])
+    b1 = np.array([[ 0.8749701] ,  [0.97889807],  [0.91427618],  [0.39205414],  [0.83271261]])
+    W2 = np.array([[ 0.26564146, 0.69353998, 0.39402367, 0.19349045, 0.31790691]])
+    b2 = np.array([[ 0.28713551]])
+
+    return (W1, b1, W2, b2)
 
 
 def normalise_vector(vec):
@@ -63,25 +75,39 @@ def get_data_sets():
     val_inp = np.zeros((2, Ncol))
     val_tar = np.zeros((1, Ncol))
 
-    for i in range(Ncol):
-
-        if np.random.random() < .7:
+    if DEBUG:
+        for i in [3,25,43,55]:
             trn_inp[:, [i_trn]] = V[:, [i]]
             trn_tar[:, [i_trn]] = y[:, [i]]
             i_trn += 1
 
-        else:
+        for i in [11]:
             val_inp[:, [i_val]] = V[:, [i]]
             val_tar[:, [i_val]] = y[:, [i]]
             i_val += 1
 
+    else:
+
+        for i in range(Ncol):
+    
+            if np.random.random() < .7:
+                trn_inp[:, [i_trn]] = V[:, [i]]
+                trn_tar[:, [i_trn]] = y[:, [i]]
+                i_trn += 1
+    
+            else:
+                val_inp[:, [i_val]] = V[:, [i]]
+                val_tar[:, [i_val]] = y[:, [i]]
+                i_val += 1
+
+        
     trn_inp = trn_inp[:, range(i_trn)]
     trn_tar = trn_tar[:, range(i_trn)]
     val_inp = val_inp[:, range(i_val)]
     val_tar = val_tar[:, range(i_val)]
 
-    if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
-        raise ValueError('Sum of training and validation columns not correct')
+    # if not trn_inp.shape[1] + val_inp.shape[1] == Ncol:
+    #     raise ValueError('Sum of training and validation columns not correct')
 
     return (trn_inp, trn_tar, val_inp, val_tar)
 
@@ -114,8 +140,16 @@ kwargs['layer2_transfer_function'] = nn_utils.purelin
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dtansig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
+if DEBUG:
+    (W1, b1vec, W2, b2vec) = get_debug_weights()
+    kwargs['layer1_initial_weights'] = (W1, b1vec)
+    kwargs['layer2_initial_weights'] = (W2, b2vec)
+
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
+
+print('Weights:')
+sp.print_weights()
 
 iteration_count = 10000
 logspace = np.logspace(1., np.log(iteration_count), 100)
@@ -133,7 +167,7 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    if i in plot_points:
+    if i in plot_points or converged:
         print('After iteration {}, rms now: {} g_norm = {}\n'.format(i, sp.rms, sp.g_norm))
 
         rms_trn = nn_utils.get_rms_error(train_input, train_target, sp)
@@ -156,10 +190,7 @@ for i in range(1, iteration_count):
         plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
         plt.draw()
 
-    if converged:
-        print('Premature convergence at iteration {}.'.format(i))
-        break
-
-
+        if converged:
+            break
 
 # plt.savefig('hagan_case_study_1.png')
