@@ -162,7 +162,7 @@ plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
 plt.subplot(2,1,1)
-plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+plt.axis([1, 10. * iteration_count, 1e-7, 10.])
 plt.yscale('log')
 plt.xscale('log')
 plt.ion()

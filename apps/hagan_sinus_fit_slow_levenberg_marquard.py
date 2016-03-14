@@ -10,7 +10,7 @@ def g(p):
     The function used in the example (equation 11.57)
     """
 
-    return 1. + np.sin(.5 * np.pi * p)
+    return 1. + np.sin(2.0 * np.pi * p)
 
 
 def get_training_set(interpolate=False):
@@ -33,7 +33,7 @@ def get_training_set(interpolate=False):
     This is to see how the network interpolates.
     """
 
-    step = 1.
+    step = 0.1
     if interpolate:
         step = step / 3.
 
@@ -61,15 +61,15 @@ kwargs['layer2_transfer_function'] = nn_utils.purelin
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
-W1, b1vec, W2, b2vec = nn_utils.get_fixed_test_weights(S1)
+# W1, b1vec, W2, b2vec = nn_utils.get_fixed_test_weights(S1)
 
-kwargs['layer1_initial_weights'] = (W1, b1vec)
-kwargs['layer2_initial_weights'] = (W2, b2vec)
+# kwargs['layer1_initial_weights'] = (W1, b1vec)
+# kwargs['layer2_initial_weights'] = (W2, b2vec)
 
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 100
+iteration_count = 1000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -90,9 +90,6 @@ print(sp.get_response(train_input))
 print('Initial rms:')
 print(sp.get_rms_error())
 print('--')
-
-import ipdb
-ipdb.set_trace
 
 for i in range(1, iteration_count):
 

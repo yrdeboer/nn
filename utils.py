@@ -2,7 +2,7 @@ import numpy as np
 import sys
 
 
-DEBUG = True
+DEBUG = False
 
 
 def print_dbg(* args):
