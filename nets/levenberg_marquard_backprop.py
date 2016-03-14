@@ -167,7 +167,8 @@ class LevenbergMarquardBackprop():
         if l < S1R:
 
             m = 1
-            i = h % self.S1
+            #i = h % self.S1
+            i = l / self.R
 
             j = l % self.R
             a = self.get_layer_output(m-1, A1, A2)[j,q]
@@ -180,7 +181,7 @@ class LevenbergMarquardBackprop():
         if l < S1RS1:
 
             m = 1
-            i = (l - S1R) % self.S1
+            i = (l - S1R)
             a = 1.0
 
             print_dbg('    l={} i={} a={} (b1vec)'.format(l,i,a))
@@ -423,11 +424,17 @@ class LevenbergMarquardBackprop():
 
             k += 1
 
-            print_dbg('  Before multiply: k={} mu={}'.format(k,self.mu))
+            print_dbg('  k={}: Before multiply: k={} mu={}'.format(k, k,self.mu))
+
+            if self.mu < np.finfo('float64').eps:
+                print('  Raising mu from {} to {}'.format(self.mu, self.theta*self.mu))
+                self.mu = self.mu * self.theta
 
             # 3. Solve eq. (12.32) to obtain dx_k
             det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
+
+            print_dbg('det_inv = {}'.format(det_inv))
 
             jtv = np.dot(np.transpose(J), v_cur)
 
@@ -440,11 +447,10 @@ class LevenbergMarquardBackprop():
 
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
 
-            # print_dbg('k={} mu={} rms_peek={} dx={}'.format(
-            #     k,
-            #     self.mu,
-            #     rms_peek,
-            #     np.transpose(dx)))
+            print_dbg('mu={} rms_peek={} dx={}'.format(
+                self.mu,
+                rms_peek,
+                np.transpose(dx)))
 
             # 4b. Update
             if rms_peek < self.rms:
@@ -461,7 +467,7 @@ class LevenbergMarquardBackprop():
             else:
                 self.mu *= self.theta
 
-            if self.mu == np.inf:
+            if self.mu > 1e10:
                 print_dbg('Converged, breaking out, k = {} mu = {}'.format(k, self.mu))
                 return True
 
@@ -470,7 +476,7 @@ class LevenbergMarquardBackprop():
 
     def print_weights(self):
 
-        print_dbg('\nW1    = {}'.format(self.W1))
-        print_dbg('b1vec = {}'.format(self.b1vec))
-        print_dbg('W2    = {}'.format(self.W2))
-        print_dbg('b2vec = {}'.format(self.b2vec))
+        print('\nW1    = {}'.format(self.W1))
+        print('b1vec = {}'.format(self.b1vec))
+        print('W2    = {}'.format(self.W2))
+        print('b2vec = {}'.format(self.b2vec))

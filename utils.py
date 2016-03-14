@@ -2,7 +2,7 @@ import numpy as np
 import sys
 
 
-DEBUG = False
+DEBUG = True
 
 
 def print_dbg(* args):
@@ -118,3 +118,21 @@ def get_sensitivity_diag(df, n):
 
     return np.diag(np.transpose(df(n))[0])
 
+
+def get_fixed_test_weights(S1):
+
+    if S1 == 3:
+        W1    = np.array([[ 0.19749696], [ 0.10375355], [ 0.13573105]])
+        b1vec = np.array([[ -0.09755427], [-0.2483391 ], [ -0.02418904]])
+        W2    = np.array([[ -0.24029654,  0.20959161, -0.00655793]])
+        b2vec = np.array([[-0.00848665]])
+        return (W1, b1vec, W2, b2vec)
+    
+    elif S1 == 5:
+        W1    = np.array([[-0.19749696], [-0.10375355], [-0.13573105], [-0.16591071], [ 0.23851599]])
+        b1vec = np.array([[ 0.09755427], [-0.2483391 ], [ 0.02418904], [ 0.1681916 ], [-0.10742645]])
+        W2    = np.array([[ 0.24029654,  0.20959161, -0.00655793, -0.18611057,  0.23655623]])
+        b2vec = np.array([[-0.00848665]])
+        return (W1, b1vec, W2, b2vec)
+    
+    raise ValueError('No fixed weights for neuron count S1: {}'.format(S1))
