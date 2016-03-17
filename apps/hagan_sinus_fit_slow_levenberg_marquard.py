@@ -46,7 +46,7 @@ def get_training_set(interpolate=False):
 
 (train_input, train_target) = get_training_set()
 
-S1 = 3
+S1 = 6
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -79,7 +79,7 @@ plt.axis([1, 10. * iteration_count, 1e-6, 10.])
 plt.yscale('log')
 plt.xscale('log')
 plt.ion()
-plt.show()
+
 
 print('Initial weights:')
 sp.print_weights()
@@ -105,7 +105,6 @@ for i in range(1, iteration_count):
 
         plt.subplot(2,1,1)        
         plt.scatter(i, rms, c='b')
-        plt.draw()
 
         plt.subplot(2,1,2)        
         plt.cla()
@@ -114,7 +113,8 @@ for i in range(1, iteration_count):
         plt.scatter(x[0], np.transpose(y), c='b')
 
         plt.scatter(train_input[0], train_target[0], c='r')
-        plt.draw()
+        plt.show()
+        plt.pause(.00001)
 
     if converged:
         break
