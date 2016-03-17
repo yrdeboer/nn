@@ -12,9 +12,8 @@ if not PYTHONPATH:
 
 DEBUG = False
 
-DATA_FILE_P = '{}/hagan_case_study_data/ball_p.txt'.format(PYTHONPATH)
-DATA_FILE_T = '{}/hagan_case_study_data/ball_t.txt'.format(PYTHONPATH)
-
+DATA_FILE_P = 'hagan_case_study_data/ball_p.txt'
+DATA_FILE_T = 'hagan_case_study_data/ball_t.txt'
 
 def get_debug_weights():
 
@@ -166,7 +165,6 @@ plt.axis([1, 10. * iteration_count, 1e-7, 10.])
 plt.yscale('log')
 plt.xscale('log')
 plt.ion()
-plt.show()
 
 for i in range(1, iteration_count):
 
@@ -183,13 +181,13 @@ for i in range(1, iteration_count):
         plt.subplot(2,1,1)
         plt.scatter(i, rms_trn, c='b')
         plt.scatter(i, rms_val, c='r')
-        plt.draw()
 
         plt.subplot(2,1,2)
         plt.cla()
         plt.scatter(train_target[0], sp.get_response(train_input), c='b')
         plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
-        plt.draw()
+        plt.show()
+        plt.pause(.000001)  # Dont' remove this, needed for plotting, suck, yeah.
 
         if converged:
             break
