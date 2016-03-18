@@ -34,6 +34,8 @@ def get_data_sets():
          [0., 0., 1., 1., 0., 0., 1., 1.],
          [0., 1., 0., 1., 0., 1., 0., 1.]])
 
+    training_input = training_target
+    
     validation_input = np.zeros((1, 1))
     validation_target = np.zeros((1, 1))
 
@@ -79,7 +81,7 @@ print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 50
+kwargs['layer1_neuron_count'] = 3
 kwargs['layer2_neuron_count'] = 3
 
 kwargs['layer1_transfer_function'] = nn_utils.purelin
@@ -132,3 +134,12 @@ for i in range(1, iteration_count):
             break
 
 plt.savefig('binary_simple_test_lb.png')
+
+sp.print_weights()
+
+print('V=\n{}'.format(train_input))
+print('y=\n{}'.format(train_target))
+print('y^=\n{}'.format(sp.get_response(train_target)))
+print('error\n{}'.format(train_target - sp.get_response(train_target)))
+
+
