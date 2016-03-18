@@ -4,6 +4,10 @@ import utils as nn_utils
 from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 from utils import print_dbg
 
+
+np.set_printoptions(linewidth=1000)
+
+
 """
 This script uses a simple 2-layer net with multi-dim
 net output (n2) to verify the Levenberg-Marquard algo.
@@ -75,7 +79,7 @@ print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 5
+kwargs['layer1_neuron_count'] = 50
 kwargs['layer2_neuron_count'] = 3
 
 kwargs['layer1_transfer_function'] = nn_utils.purelin
@@ -128,6 +132,3 @@ for i in range(1, iteration_count):
             break
 
 plt.savefig('binary_simple_test_lb.png')
-
-import ipdb
-ipdb.set_trace()

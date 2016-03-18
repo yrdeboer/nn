@@ -346,11 +346,14 @@ class LevenbergMarquardBackprop():
         print_dbg('A1:\n{}'.format(A1))
         print_dbg('N2:\n{}'.format(N2))
         print_dbg('A2:\n{}'.format(A2))
-
+        print_dbg('y:\n{}'.format(self.y))
+        
         # 1b. Calculate the errors
         ERR = y - A2
         self.rms = self.get_rms_error()
 
+        print_dbg('ERR:\n{}'.format(ERR))
+        
         print_dbg('  self.rms init to: {}'.format(self.rms))
 
         v_cur = self.get_v_from_error(ERR)
