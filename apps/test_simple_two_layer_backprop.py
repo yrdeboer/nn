@@ -51,8 +51,8 @@ kwargs['training_data'] = (V, y)
 sp = SimpleTwoLayerBackprop(** kwargs)
 sp.train_step()
 
-print('\nWeights:')
-sp.print_weights()
+# print('\nWeights:')
+# sp.print_weights()
 
 # Check values
 error_count = 0
@@ -71,8 +71,10 @@ if not int(round(sp.W2[0][1] * 10000)) == -772:
 if not int(round(sp.b2vec[0][0] * 1000)) == 732:
     error_count += 1
 
-
+test_name = 'Hagan 2-layer simple backprop'
+    
 if error_count == 0:
-    print('SUCCESS')
+    print('SUCCESS ({})'.format(test_name))
 else:
-    print('ERROR (error_count = {})'.format(error_count))
+    print('ERROR   ({})'.format(test_name))
+

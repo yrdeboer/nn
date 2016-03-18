@@ -13,7 +13,6 @@ This script uses a simple 2-layer net with multi-dim
 net output (n2) to verify the Levenberg-Marquard algo.
 """
 
-
 DEBUG = True
 
 
@@ -112,7 +111,9 @@ success = np.array_equal(
     np.round(1000 * sp.get_response(
         train_input)), train_target * 1000)
 
+test_name = 'Levenberg-Marquard ("binary")'
+
 if success:
-    print('SUCCESS')
+    print('SUCCESS ({})'.format(test_name))
 else:
-    print('ERROR')
+    print('ERROR   ({})'.format(test_name))

@@ -1,6 +1,5 @@
 import numpy as np
 from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
-import utils as nn_utils
 
 """
 Here we test the Levenberg-Marquard implementation by the numeric example
@@ -48,7 +47,7 @@ kwargs['training_data'] = (V, y)
 sp = LevenbergMarquardBackprop(** kwargs)
 sp.train_step()
 
-print('\nJacobian:\n{}\n'.format(sp.Jac))
+# print('\nJacobian:\n{}\n'.format(sp.Jac))
 
 # Check values
 error_count = 0
@@ -64,7 +63,9 @@ for h in range(sp.S2 * Q):
         if not GoodJac[h,l] == sp.Jac[h,l]:
             error_count += 1
 
+test_name = 'Levenberg-Marquard Jacobian, Hagan'
+
 if error_count == 0:
-    print('SUCCESS')
+    print('SUCCESS ({})'.format(test_name))
 else:
-    print('ERROR (error_count = {})'.format(error_count))
+    print('ERROR   ({})'.format(test_name))
