@@ -33,18 +33,20 @@ class LevenbergMarquardBackprop():
             self.b1vec = W1inits[1]
         else:
             mult_factor = .5
-            self.W1 = (np.random.random_sample((self.S1, self.R)) - 0.5) * mult_factor
-            self.b1vec = (np.random.random_sample((self.S1, 1)) - 0.5) * mult_factor
-
+            self.W1 = (np.random.random_sample(
+                (self.S1, self.R)) - 0.5) * mult_factor
+            self.b1vec = (np.random.random_sample(
+                (self.S1, 1)) - 0.5) * mult_factor
 
         W2inits = kwargs.get('layer2_initial_weights', None)
         if W2inits:
             self.W2 = W2inits[0]
             self.b2vec = W2inits[1]
         else:
-            self.W2 = (np.random.random_sample((self.S2, self.S1)) - 0.5) * mult_factor
-            self.b2vec = (np.random.random_sample((self.S2, 1)) - 0.5) * mult_factor
-
+            self.W2 = (np.random.random_sample(
+                (self.S2, self.S1)) - 0.5) * mult_factor
+            self.b2vec = (np.random.random_sample(
+                (self.S2, 1)) - 0.5) * mult_factor
 
     def get_response(self,
                      P,
@@ -74,7 +76,6 @@ class LevenbergMarquardBackprop():
         N2 = np.dot(W2, A1) + b2vec
         return self.f2(N2)
 
-
     def get_layer(self, l):
 
         """
@@ -101,7 +102,6 @@ class LevenbergMarquardBackprop():
             return self.S2
 
         raise IndexError('Value m out of bounds: {} (neuron count)'.format(m))
-            
 
     def get_jq(self, h):
 
@@ -115,8 +115,6 @@ class LevenbergMarquardBackprop():
         """
 
         return (h % self.S2, h / self.S2)
-        
-
 
     def get_v_from_error(self, ERR):
 
@@ -135,7 +133,6 @@ class LevenbergMarquardBackprop():
 
         return v
 
-
     def get_layer_output(self, m, A1, A2):
 
         """
@@ -152,68 +149,78 @@ class LevenbergMarquardBackprop():
 
         raise IndexError('Value m out of bounds: {} (layer output)'.format(m))
 
-
     def get_mia(self, h, l, q, A1, A2):
 
         """
-        This function returns a 3-tuple, with a,i and m, where:
+        This function returns a 3-tuple, with a,i and m.
 
-        m: Layer 1 or 2
-        i: The i't relevant neuron in layer m
-        a: The element a^(m-1)_(j,q) as per Hagan eq. (12.43)        
+        Args:
+          h:   Row index of the Jacobian in [0, Q*S2]
+          l:   Column index of the Jacobian
+               in [0, R*S1 (W1) + R (b1vec) + S1*S2 (W2) + S2 (b2vec)]
+          q:   Referring to the q'th training point
+          A1:  Net output of layer 1
+          A2:  Net output of layer 2
+
+        Returns:
+           m:  Layer index in [1, 2]
+           i:  Referring to the i't relevant neuron in layer m,
+               depending on l
+           a:  The element a^(m-1)_(j,q) as per Hagan eq. (12.43)
         """
 
         S1R = self.S1 * self.R
-        if l < S1R:
+        if l < S1R:  # W1
 
             m = 1
-            #i = h % self.S1
-            i = l / self.R
+            i = int(l / self.R)
 
             j = l % self.R
-            a = self.get_layer_output(m-1, A1, A2)[j,q]
+            a = self.get_layer_output(m-1, A1, A2)[j, q]
 
-            print_dbg('    l={} i={} j={} q={} a={} (W1)'.format(l,i,j,q,a))
+            print_dbg(
+                '    l={} i={} j={} q={} a={} (W1)'.format(l, i, j, q, a))
 
-            return (m,i,a)
-        
+            return (m, i, a)
+
         S1RS1 = S1R + self.S1
-        if l < S1RS1:
+        if l < S1RS1:  # b1
 
             m = 1
             i = (l - S1R)
             a = 1.0
 
-            print_dbg('    l={} i={} a={} (b1vec)'.format(l,i,a))
+            print_dbg('    l={} i={} a={} (b1vec)'.format(l, i, a))
 
-            return (m,i,a)
+            return (m, i, a)
 
         S1RS1S2S1 = S1RS1 + self.S2 * self.S1
-        if l < S1RS1S2S1:
+        if l < S1RS1S2S1:  # W2
 
             m = 2
-            i = (l - S1RS1) % self.S2
+            # i = (l - S1RS1) % self.S2  # Wrong (?) as per 2016 mar 18
+            i = int((l - S1RS1) / self.S1)
 
             j = (l - S1RS1) % self.S1
-            a = self.get_layer_output(m-1, A1, A2)[j,q]
+            a = self.get_layer_output(m-1, A1, A2)[j, q]
 
-            print_dbg('    l={} i={} j={} q={} a={} (W2)'.format(l,i,j,q,a))
+            print_dbg(
+                '    l={} i={} j={} q={} a={} (W2)'.format(l, i, j, q, a))
 
-            return (m,i,a)
+            return (m, i, a)
 
         S1RS1S2S1S2 = S1RS1S2S1 + self.S2
-        if l < S1RS1S2S1S2:
+        if l < S1RS1S2S1S2:  # b2
 
             m = 2
             i = (l - S1RS1S2S1) % self.S2
             a = 1.0
 
-            print_dbg('    l={} i={} a={} (b2vec)'.format(l,i,a))
+            print_dbg('    l={} i={} a={} (b2vec)'.format(l, i, a))
 
-            return (m,i,a)
+            return (m, i, a)
 
         raise IndexError('Value l out of bounds: {}'.format(l))
-
 
     def weights_to_x(self,
                      W1=np.array([]),
@@ -258,7 +265,6 @@ class LevenbergMarquardBackprop():
 
         return x.reshape((w1b1w2b2_cnt, 1))
 
-
     def x_to_weights(self, x):
 
         """
@@ -285,7 +291,6 @@ class LevenbergMarquardBackprop():
 
         return (W1, b1vec, W2, b2vec)
 
-
     def get_rms_error(self,
                       W1=np.array([]),
                       b1vec=np.array([]),
@@ -296,15 +301,14 @@ class LevenbergMarquardBackprop():
 
         mse = 0.
         for i in range(Q):
-    
+
             pvec = self.V[:, [i]]
             yhat = self.get_response(pvec, W1, b1vec, W2, b2vec)
-    
+
             diff = self.y[:, [i]] - yhat
-            mse += diff * diff
-    
-        return mse / float(Q)
-    
+            mse += np.sum(diff * diff)
+
+            return mse / float(Q)
 
     def train_step(self):
 
@@ -318,21 +322,20 @@ class LevenbergMarquardBackprop():
         y = self.y                  # Input targets shape = (S2, Q)
         Q = V.shape[1]              # Input training vector count
         R = V.shape[0]              # Input vector size
-        W1 = self.W1              
+        W1 = self.W1
         b1vec = self.b1vec
         W2 = self.W2
         b2vec = self.b2vec
         S1 = self.S1
         S2 = self.S2
         f1 = self.f1
-        f2 = self.f2
         df1 = self.df1
         df2 = self.df2
 
-        # print_dbg('  R={} Q={} S1={} S2={}'.format(R,Q,S1,S2))
+        print_dbg('  R={} Q={} S1={} S2={}'.format(R, Q, S1, S2))
 
         # Algorithm from Hagan p. 12-25
-        # 
+        #
         # 1a. Compute network in- and out-puts N2 and A2
         N1 = np.dot(W1, V) + b1vec
         A1 = f1(N1)
@@ -343,7 +346,6 @@ class LevenbergMarquardBackprop():
         print_dbg('A1:\n{}'.format(A1))
         print_dbg('N2:\n{}'.format(N2))
         print_dbg('A2:\n{}'.format(A2))
-
 
         # 1b. Calculate the errors
         ERR = y - A2
@@ -384,7 +386,7 @@ class LevenbergMarquardBackprop():
         #     eqs. (12.43) and (12.44)
 
         Nrow_j = S2 * Q
-        Ncol_j =  S1 * R + S1 + S2 * S1 + S2
+        Ncol_j = S1 * R + S1 + S2 * S1 + S2
 
         print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
@@ -399,23 +401,27 @@ class LevenbergMarquardBackprop():
 
             for l in range(Ncol_j):
 
-                q = h / self.S2
+                q = int(h / self.S2)
                 (m, i, a) = self.get_mia(h, l, q, A1, A2)
 
                 s = S_augs[m-1][i][h]
 
-                print_dbg('      S_augs[{}][{}][{}] = {}\n'.format(m-1,i,h,s))
-               
-                self.Jac[h,l] = s * a
+                print_dbg(
+                    '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
+
+                self.Jac[h, l] = s*a
 
         J = self.Jac
         JT = np.transpose(J)
-        JTJ = np.dot(JT, J) 
+        JTJ = np.dot(JT, J)
+
+        print_dbg('JT = {}'.format(JT))
+        print_dbg('v_cur = {}'.format(v_cur))
 
         g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
 
-        k=0
+        k = 0
 
         print_dbg('  J={} '.format(J))
         print_dbg('  x={} '.format(np.transpose(x_cur)))
@@ -424,10 +430,15 @@ class LevenbergMarquardBackprop():
 
             k += 1
 
-            print_dbg('  k={}: Before multiply: k={} mu={}'.format(k, k,self.mu))
+            print_dbg(
+                '  k={}: Before multiply: k={} mu={}'.format(
+                    k, k, self.mu))
 
             if self.mu < np.finfo('float64').eps:
-                print('  Raising mu from {} to {}'.format(self.mu, self.theta*self.mu))
+                print(
+                    '  Raising mu from {} to {}'.format(
+                        self.mu,
+                        self.theta*self.mu))
                 self.mu = self.mu * self.theta
 
             # 3. Solve eq. (12.32) to obtain dx_k
@@ -440,7 +451,7 @@ class LevenbergMarquardBackprop():
 
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv, jtv)
-    
+
             # 4a. Recompute rms
             x_peek = x_cur + dx
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
@@ -468,11 +479,13 @@ class LevenbergMarquardBackprop():
                 self.mu *= self.theta
 
             if self.mu > 1e10:
-                print_dbg('Converged, breaking out, k = {} mu = {}'.format(k, self.mu))
+                print_dbg(
+                    'Converged, breaking out, k = {} mu = {}'.format(
+                        k,
+                        self.mu))
                 return True
 
         return False
-   
 
     def print_weights(self):
 
@@ -480,3 +493,4 @@ class LevenbergMarquardBackprop():
         print('b1vec = {}'.format(self.b1vec))
         print('W2    = {}'.format(self.W2))
         print('b2vec = {}'.format(self.b2vec))
+

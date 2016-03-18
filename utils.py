@@ -8,7 +8,7 @@ DEBUG = False
 def print_dbg(* args):
 
     if not DEBUG:
-        return 
+        return
 
     s = ''
     for arg in args:
@@ -24,7 +24,7 @@ def logsig(x):
 
 
 def dlogsig(x):
-    
+
     e = np.exp(-x)
     d = (1. + e)
     return e / (d * d)
