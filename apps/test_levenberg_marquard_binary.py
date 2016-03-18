@@ -14,7 +14,7 @@ net output (n2) to verify the Levenberg-Marquard algo.
 """
 
 
-DEBUG = False
+DEBUG = True
 
 
 def get_data_sets():
@@ -44,39 +44,25 @@ def get_data_sets():
 
 def get_debug_weights():
 
-    W1 = np.array([[-0.55324921],
-                   [0.50472091]])
+    W1 = np.array([[-0.55324921, 0.30472091, -0.25384921],
+                   [-0.2492100,  0.04720913, -0.35324921],
+                   [-0.65324921, 0.50472091, 0.95324921]])
     b1 = np.array([[0.4749701],
-                   [-0.27889807]])
-    W2 = np.array([[0.26564146, -0.69353998],
-                   [0.39402367, 0.19349045],
-                   [0.31790691, -0.83271261]])
-    b2 = np.array([[0.28713551],
-                   [-0.91427618],
-                   [0.39205414]])
+                   [-0.27889807],
+                   [-0.69353998]])
+    W2 = np.array([[-0.32492100, 0.20472091, 0.75324921],
+                   [-0.4921000, -0.20472091, 0.4324921],
+                   [-0.5324921, 0.90472091, 0.64921]])
+    b2 = np.array([[0.4749701],
+                   [-0.27889807],
+                   [-0.69353998]])
 
     return (W1, b1, W2, b2)
 
 
-def normalise_vector(vec):
-
-    """
-    Project on range [-1, 1]
-    """
-
-    min = np.min(vec)
-    max = np.max(vec)
-
-    if max == min:
-        raise ValueError(
-            'Cannot normalise vector, max equals min')
-
-    return -1. + 2. * (vec - min) / (max - min)
-
-
 (train_input, train_target, val_inp, val_tar) = get_data_sets()
 
-print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
+# print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -97,20 +83,9 @@ if DEBUG:
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-print_dbg('Weights:')
-sp.print_weights()
-
-iteration_count = 100
+iteration_count = 18
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
-
-
-# Interactive plotting of the mean squared error
-plt.subplot(1, 1, 1)
-plt.axis([1, 10. * iteration_count, 1e-7, 10.])
-plt.yscale('log')
-plt.xscale('log')
-plt.ion()
 
 for i in range(1, iteration_count):
 
@@ -120,26 +95,24 @@ for i in range(1, iteration_count):
 
         rms_trn = sp.rms
 
-        print('It={:6} rms_trn={:.5f}'.format(i, rms_trn)),
-        print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
-
-        plt.subplot(1, 1, 1)
-        plt.scatter(i, rms_trn, c='b')
-
-        # Dont' remove this, needed for
-        # plotting, sucks, yeah :(
-        plt.pause(.000001)
+        # print('It={:6} rms_trn={:.5f}'.format(i, rms_trn)),
+        # print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
 
         if converged:
             break
 
 plt.savefig('binary_simple_test_lb.png')
 
-sp.print_weights()
+# print('V=\n{}'.format(train_input))
+# print('y=\n{}'.format(train_target))
+# print('y^=\n{}'.format(sp.get_response(train_target)))
+# print('error\n{}'.format(train_target - sp.get_response(train_target)))
 
-print('V=\n{}'.format(train_input))
-print('y=\n{}'.format(train_target))
-print('y^=\n{}'.format(sp.get_response(train_target)))
-print('error\n{}'.format(train_target - sp.get_response(train_target)))
+success = np.array_equal(
+    np.round(1000 * sp.get_response(
+        train_input)), train_target * 1000)
 
-
+if success:
+    print('SUCCESS')
+else:
+    print('ERROR')
