@@ -304,4 +304,14 @@ Creating this in simple_backprop.py, using Hagan example on p. 11-14 to 11-17.
 <p>
   So it was not possible to learn the network to count binary ... have to think why some more, but I now trust the LM algoritm! :)
 <p>
+  Made three tests:
+  <pre>
+(venv3)ytsen @ y700 ~/github/nn (master)
+└─ $ ▶ for i in $( ls apps/test*.py ) ; do python $i ; done
+SUCCESS (Levenberg-Marquard Hagan Case study 1 -- light sensors)
+SUCCESS (Levenberg-Marquard ("binary"))
+SUCCESS (Levenberg-Marquard Jacobian, Hagan)
+SUCCESS (Hagan 2-layer simple backprop)
+  </pre>
+  
   
