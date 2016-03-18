@@ -114,7 +114,7 @@ class LevenbergMarquardBackprop():
         j is the offset within that batch
         """
 
-        return (h % self.S2, h / self.S2)
+        return (h % self.S2, int(h / self.S2))
 
     def get_v_from_error(self, ERR):
 
