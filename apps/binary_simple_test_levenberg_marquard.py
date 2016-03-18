@@ -10,6 +10,9 @@ net output (n2) to verify the Levenberg-Marquard algo.
 """
 
 
+DEBUG = False
+
+
 def get_data_sets():
 
     """
@@ -72,7 +75,7 @@ print('N_train = {} N_val = {}'.format(train_input.shape[1], val_inp.shape[1]))
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 2
+kwargs['layer1_neuron_count'] = 5
 kwargs['layer2_neuron_count'] = 3
 
 kwargs['layer1_transfer_function'] = nn_utils.purelin
@@ -80,9 +83,10 @@ kwargs['layer2_transfer_function'] = nn_utils.tansig
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dpurelin
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dtansig
 
-(W1, b1vec, W2, b2vec) = get_debug_weights()
-kwargs['layer1_initial_weights'] = (W1, b1vec)
-kwargs['layer2_initial_weights'] = (W2, b2vec)
+if DEBUG:
+    (W1, b1vec, W2, b2vec) = get_debug_weights()
+    kwargs['layer1_initial_weights'] = (W1, b1vec)
+    kwargs['layer2_initial_weights'] = (W2, b2vec)
 
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
@@ -113,7 +117,7 @@ for i in range(1, iteration_count):
         print('It={:6} rms_trn={:.5f}'.format(i, rms_trn)),
         print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
 
-        plt.subplot(2, 1, 1)
+        plt.subplot(1, 1, 1)
         plt.scatter(i, rms_trn, c='b')
 
         # Dont' remove this, needed for
@@ -124,3 +128,6 @@ for i in range(1, iteration_count):
             break
 
 plt.savefig('binary_simple_test_lb.png')
+
+import ipdb
+ipdb.set_trace()

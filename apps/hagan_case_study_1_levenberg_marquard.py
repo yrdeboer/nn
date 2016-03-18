@@ -175,7 +175,8 @@ for i in range(1, iteration_count):
         rms_trn = sp.rms
         rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
 
-        print('It={:6} rms_trn={:.5f}  rms_val={:.5f} '.format(i, rms_trn[0,0], rms_val[0,0])),
+        print('It={:6} rms_trn={:.5f}  rms_val={:.5f} '.format(
+            i, rms_trn, rms_val[0, 0])),
         print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
 
         plt.subplot(2,1,1)
