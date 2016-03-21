@@ -8,6 +8,12 @@ np.set_printoptions(threshold=np.nan)
 
 class LevenbergMarquardBackprop():
 
+    """
+    Note: we are implementing the Bayes regularisation
+          scheme in this class.
+          For now, still testing ...
+    """
+
     def __init__(self, * args, ** kwargs):
 
         self.R = kwargs.get('input_dim', None)
@@ -48,6 +54,9 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 (self.S2, 1)) - 0.5) * mult_factor
 
+        # Bayes regularisation stuff goes here
+        # Ed = self.get_rms_error() * 
+        
     def get_response(self,
                      P,
                      W1=np.array([]),
@@ -291,24 +300,44 @@ class LevenbergMarquardBackprop():
 
         return (W1, b1vec, W2, b2vec)
 
-    def get_rms_error(self,
+    def get_sse_error(self,
                       W1=np.array([]),
                       b1vec=np.array([]),
                       W2=np.array([]),
                       b2vec=np.array([])):
 
+        """
+        This function returns the sum
+        squared error.
+        """
+
         Q = self.V.shape[1]
 
-        mse = 0.
+        sse = 0.
         for i in range(Q):
 
             pvec = self.V[:, [i]]
             yhat = self.get_response(pvec, W1, b1vec, W2, b2vec)
 
             diff = self.y[:, [i]] - yhat
-            mse += np.sum(diff * diff)
+            sse += np.sum(diff * diff)
 
-        return mse / float(Q + self.S1)
+        return sse
+
+    def get_rms_error(self,
+                      W1=np.array([]),
+                      b1vec=np.array([]),
+                      W2=np.array([]),
+                      b2vec=np.array([])):
+
+        """
+        This function return the root mean squared
+        error.
+        """
+        
+        Q = self.V.shape[1]
+        sse = self.get_sse_error(W1, b1vec, W2, b2vec)
+        return np.sqrt(sse) / float(Q + self.S1)
 
     def train_step(self):
 
@@ -347,14 +376,14 @@ class LevenbergMarquardBackprop():
         print_dbg('N2:\n{}'.format(N2))
         print_dbg('A2:\n{}'.format(A2))
         print_dbg('y:\n{}'.format(self.y))
-        
+
         # 1b. Calculate the errors
         ERR = y - A2
-        self.rms = self.get_rms_error()
+        self.sse = self.get_sse_error()
 
         print_dbg('ERR:\n{}'.format(ERR))
         
-        print_dbg('  self.rms init to: {}'.format(self.rms))
+        print_dbg('  self.sse init to: {}'.format(self.sse))
 
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
@@ -455,21 +484,21 @@ class LevenbergMarquardBackprop():
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv, jtv)
 
-            # 4a. Recompute rms
+            # 4a. Recompute sse
             x_peek = x_cur + dx
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
 
-            rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
+            sse_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
 
-            print_dbg('mu={} rms_peek={} dx={}'.format(
+            print_dbg('mu={} sse_peek={} dx={}'.format(
                 self.mu,
-                rms_peek,
+                sse_peek,
                 np.transpose(dx)))
 
             # 4b. Update
-            if rms_peek < self.rms:
+            if sse_peek < self.sse:
 
-                self.rms = rms_peek
+                self.sse = sse_peek
                 self.mu /= self.theta
                 self.W1 = W1
                 self.b1vec = b1vec

@@ -109,8 +109,8 @@ print('Initial x:\n{}'.format(np.transpose(sp.weights_to_x())))
 
 print('Initial response:')
 print(sp.get_response(train_input))
-print('Initial rms:')
-print(sp.get_rms_error())
+print('Initial sse:')
+print(sp.get_sse_error())
 print('--')
 
 for i in range(1, iteration_count):
@@ -119,15 +119,15 @@ for i in range(1, iteration_count):
 
     if i < 25 or i in plot_points or converged:
 
-        rms = sp.rms
+        sse = sp.sse
 
         print(
-            'Iteration: {:5} rms: {:.8f} g_norm: {:.6f} converged: {}'.format(
-                i, rms, sp.g_norm, converged))
+            'Iteration: {:5} sse: {:.8f} g_norm: {:.6f} converged: {}'.format(
+                i, sse, sp.g_norm, converged))
         sys.stdout.flush()
 
         plt.subplot(2, 1, 1)
-        plt.scatter(i, rms, c='b')
+        plt.scatter(i, sse, c='b')
 
         plt.subplot(2, 1, 2)
         plt.cla()
