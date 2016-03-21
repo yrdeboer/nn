@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
+from nets.levenberg_marquard_backprop_bay_reg import LevenbergMarquardBackprop
 import utils as nn_utils
 import sys
 
