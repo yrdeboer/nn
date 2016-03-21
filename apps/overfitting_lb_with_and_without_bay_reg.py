@@ -13,6 +13,20 @@ def g(p):
 
     return 1. + np.sin(0.5 * np.pi * p)
 
+NOISE = [-0.08230345, -0.08804563, -0.11719107, -0.03871356, 0.02517687,
+         0.11848636, 0.23875976, -0.06373871, -0.00112604, 0.21156093,
+         -0.3530613,
+         -0.247158, -0.15701409, 0.46783705, 0.02523148, -0.23911402,
+         0.04711678,
+         0.10378847, -0.37651379, -0.07710619, -0.03495549, 0.38485966,
+         -0.38275189,
+         -0.25700503,
+         0.23190758, 0.03926231, 0.62861338, -0.13706857, 0.10880528,
+         -0.0454776,
+         0.10889065, 0.30228765, -0.39040886, 0.04372521, 0.23434904,
+         0.05687156,
+         0.24948046, 0.02746811, 0.20458933, -0.42425311, -0.19365129]
+
 
 def get_training_set(interpolate, add_noise):
 
@@ -44,7 +58,7 @@ def get_training_set(interpolate, add_noise):
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.25, y.shape)
+        y += NOISE
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
@@ -52,7 +66,7 @@ def get_training_set(interpolate, add_noise):
 
 (train_input, train_target) = get_training_set(False, True)
 
-S1 = 2
+S1 = 20
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -67,7 +81,7 @@ kwargs['layer2_transfer_function'] = nn_utils.purelin
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
-# W1, b1vec, W2, b2vec = nn_utils.get_fixed_test_weights(S1)
+# W1, b1vec, W2, b2vec = get_fixed_test_weights()
 
 # kwargs['layer1_initial_weights'] = (W1, b1vec)
 # kwargs['layer2_initial_weights'] = (W2, b2vec)
