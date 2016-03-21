@@ -313,5 +313,30 @@ SUCCESS (Levenberg-Marquard ("binary"))
 SUCCESS (Levenberg-Marquard Jacobian, Hagan)
 SUCCESS (Hagan 2-layer simple backprop)
   </pre>
+
+  <h5 align=right>2016 mar 21</h5>
+
+  <h3>Starting with Bayesian regularisation</h3>
+  Working in file:
+  <pre>
+    ~/github/nn/nets/levenberg_marquard_backprop_bay_reg.py
+  </pre>
+  with a working file for the Levenberg-Marquard algo:
+  <pre>
+    ~/github/nn/apps/overfitting_lb_with_and_without_bay_reg.py
+  </pre>
+
+  Problem: Step 1 in the algo according to Hagan p. 13-16:
+  <pre>
+    Take 1 step of the Levenberg-Marquard algorithm toward minimising
+    the objective function F(x) = beta * E_d + alpha * E_w
+  </pre>
+  <b>But</b>: In our code, the Jacobian is calculated using the error. How
+  does the Jacobian differ when using Levenberg-Marquard ... ?
+  
+  
+  
+
+  
   
   

@@ -55,8 +55,13 @@ class LevenbergMarquardBackprop():
                 (self.S2, 1)) - 0.5) * mult_factor
 
         # Bayes regularisation stuff goes here
-        # Ed = self.get_rms_error() * 
-        
+        Ed = self.get_sse_error()
+        wgts = self.weights_to_x()
+        Ew = np.sum(np.power(wgts, 2))
+        gamma = 
+
+
+
     def get_response(self,
                      P,
                      W1=np.array([]),
@@ -243,6 +248,9 @@ class LevenbergMarquardBackprop():
 
         Any argument weight that is None, is taken from self by
         the same name.
+
+        Returns:
+          Vector x with shape (N, 1)
         """
 
         R = self.V.shape[0]              # Input vector size
@@ -334,7 +342,7 @@ class LevenbergMarquardBackprop():
         This function return the root mean squared
         error.
         """
-        
+
         Q = self.V.shape[1]
         sse = self.get_sse_error(W1, b1vec, W2, b2vec)
         return np.sqrt(sse) / float(Q + self.S1)
@@ -382,7 +390,7 @@ class LevenbergMarquardBackprop():
         self.sse = self.get_sse_error()
 
         print_dbg('ERR:\n{}'.format(ERR))
-        
+
         print_dbg('  self.sse init to: {}'.format(self.sse))
 
         v_cur = self.get_v_from_error(ERR)
