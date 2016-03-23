@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
+from nets.levenberg_marquard_backprop_bay_reg import LevenbergMarquardBackprop
 import utils as nn_utils
 import sys
 
@@ -52,7 +52,7 @@ def get_training_set(interpolate, add_noise):
 
 (train_input, train_target) = get_training_set(False, True)
 
-S1 = 2
+S1 = 20
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -103,9 +103,9 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    if i < 25 or i in plot_points or converged:
+    if i < 25 or i == iteration_count-1 or i in plot_points or converged:
 
-        rms = sp.rms
+        rms = sp.get_rms_error()
 
         print(
             'Iteration: {:5} rms: {:.8f} g_norm: {:.6f} converged: {}'.format(

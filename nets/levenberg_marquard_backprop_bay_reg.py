@@ -522,7 +522,6 @@ class LevenbergMarquardBackprop():
             # 4b. Update
             if Fx_peek < self.Fx:
 
-                self.Fx = Fx_peek
                 self.mu /= self.theta
                 self.W1 = W1
                 self.b1vec = b1vec
@@ -552,22 +551,25 @@ class LevenbergMarquardBackprop():
         H = 2. * (self.beta * JTJ + self.alpha * np.identity(
             JTJ.shape[0]))
         H_inv = np.linalg.inv(H)
+        # self.gamma = self.n - 2. * self.alpha / np.trace(H)
         self.gamma = self.n - 2. * self.alpha * np.trace(H_inv)
 
         # Only now we recompute alpha and beta
         self.alpha = 0.5 * self.gamma / Ew
         self.beta = 0.5 * (self.N - self.gamma) / Ed
+
+        Fx_old = self.Fx
+        
         self.Fx = self.beta * Ed + self.alpha * Ew
 
-        self.dFx = self.Fx - Fx_peek
-        
+        self.dFx = self.Fx - Fx_old
 
-        # print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f})'.format(
-        #     self.gamma,
-        #     self.alpha,
-        #     self.beta,
-        #     self.Fx,
-        #     np.abs(self.Fx - Fx_peek)))
+        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f})'.format(
+            self.gamma,
+            self.alpha,
+            self.beta,
+            self.Fx,
+            np.abs(self.Fx - Fx_peek)))
 
     def print_weights(self):
 
