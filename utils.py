@@ -77,9 +77,9 @@ def get_rms_error(dat_inp, dat_tar, sp):
         pnet = sp.get_response(pvec)
 
         diff = dat_tar[:, [i]] - pnet
-        mse += diff * diff
+        mse += np.sum(diff * diff)
 
-    return mse / float(Ncol)
+    return np.sqrt(mse / float(Ncol + sp.S1))
 
 
 def get_sse_from_error(ERR):

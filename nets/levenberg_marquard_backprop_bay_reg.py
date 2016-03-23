@@ -54,13 +54,27 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 (self.S2, 1)) - 0.5) * mult_factor
 
-        # Bayes regularisation stuff goes here
+        # Initialise Bayesian regularisation parameters
+        # Note, the objective function as per
+        # Hagan eq. (13.4) p. 13-8:
+        #
+        #    F(x) = beta * Ed + alpha * Ew
+
+        self.N = self.V.shape[1] * self.S1
+        self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
+
         Ed = self.get_sse_error()
-        wgts = self.weights_to_x()
-        Ew = np.sum(np.power(wgts, 2))
-        gamma = 
+        Ew = np.sum(np.power(self.weights_to_x(), 2))
+        self.gamma = self.n
+        self.alpha = 0.5 * self.gamma / Ew
+        self.beta = 0.5 * (self.N - self.gamma) / Ed
+        self.Fx = self.beta * Ed + self.alpha * Ew
 
-
+        print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
+            self.gamma,
+            self.alpha,
+            self.beta,
+            self.Fx))
 
     def get_response(self,
                      P,
@@ -192,8 +206,8 @@ class LevenbergMarquardBackprop():
             j = l % self.R
             a = self.get_layer_output(m-1, A1, A2)[j, q]
 
-            print_dbg(
-                '    l={} i={} j={} q={} a={} (W1)'.format(l, i, j, q, a))
+            # print_dbg(
+            #     '    l={} i={} j={} q={} a={} (W1)'.format(l, i, j, q, a))
 
             return (m, i, a)
 
@@ -204,7 +218,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1R)
             a = 1.0
 
-            print_dbg('    l={} i={} a={} (b1vec)'.format(l, i, a))
+            # print_dbg('    l={} i={} a={} (b1vec)'.format(l, i, a))
 
             return (m, i, a)
 
@@ -218,8 +232,8 @@ class LevenbergMarquardBackprop():
             j = (l - S1RS1) % self.S1
             a = self.get_layer_output(m-1, A1, A2)[j, q]
 
-            print_dbg(
-                '    l={} i={} j={} q={} a={} (W2)'.format(l, i, j, q, a))
+            # print_dbg(
+            #     '    l={} i={} j={} q={} a={} (W2)'.format(l, i, j, q, a))
 
             return (m, i, a)
 
@@ -230,7 +244,7 @@ class LevenbergMarquardBackprop():
             i = (l - S1RS1S2S1) % self.S2
             a = 1.0
 
-            print_dbg('    l={} i={} a={} (b2vec)'.format(l, i, a))
+            # print_dbg('    l={} i={} a={} (b2vec)'.format(l, i, a))
 
             return (m, i, a)
 
@@ -345,7 +359,7 @@ class LevenbergMarquardBackprop():
 
         Q = self.V.shape[1]
         sse = self.get_sse_error(W1, b1vec, W2, b2vec)
-        return np.sqrt(sse) / float(Q + self.S1)
+        return np.sqrt(sse / float(Q + self.S1))
 
     def train_step(self):
 
@@ -379,19 +393,18 @@ class LevenbergMarquardBackprop():
         N2 = np.dot(W2, A1) + b2vec
         A2 = self.get_response(V)
 
-        print_dbg('N1:\n{}'.format(N1))
-        print_dbg('A1:\n{}'.format(A1))
-        print_dbg('N2:\n{}'.format(N2))
-        print_dbg('A2:\n{}'.format(A2))
-        print_dbg('y:\n{}'.format(self.y))
+        # print_dbg('N1:\n{}'.format(N1))
+        # print_dbg('A1:\n{}'.format(A1))
+        # print_dbg('N2:\n{}'.format(N2))
+        # print_dbg('A2:\n{}'.format(A2))
+        # print_dbg('y:\n{}'.format(self.y))
 
         # 1b. Calculate the errors
         ERR = y - A2
-        self.sse = self.get_sse_error()
+        # self.sse = self.get_sse_error_br()  # Updates self.alpha and self.beta
 
         print_dbg('ERR:\n{}'.format(ERR))
-
-        print_dbg('  self.sse init to: {}'.format(self.sse))
+        # print_dbg('  self.sse init to: {}'.format(self.sse))
 
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
@@ -437,7 +450,7 @@ class LevenbergMarquardBackprop():
 
         for h in range(Nrow_j):
 
-            print_dbg('  h = {}'.format(h))
+            # print_dbg('  h = {}'.format(h))
 
             for l in range(Ncol_j):
 
@@ -446,8 +459,8 @@ class LevenbergMarquardBackprop():
 
                 s = S_augs[m-1][i][h]
 
-                print_dbg(
-                    '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
+                # print_dbg(
+                #     '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
 
                 self.Jac[h, l] = s*a
 
@@ -455,16 +468,16 @@ class LevenbergMarquardBackprop():
         JT = np.transpose(J)
         JTJ = np.dot(JT, J)
 
-        print_dbg('JT = {}'.format(JT))
-        print_dbg('v_cur = {}'.format(v_cur))
+        # print_dbg('JT = {}'.format(JT))
+        # print_dbg('v_cur = {}'.format(v_cur))
 
         g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
 
         k = 0
 
-        print_dbg('  J={} '.format(J))
-        print_dbg('  x={} '.format(np.transpose(x_cur)))
+        # print_dbg('  J={} '.format(J))
+        # print_dbg('  x={} '.format(np.transpose(x_cur)))
 
         while True:
 
@@ -485,33 +498,38 @@ class LevenbergMarquardBackprop():
             det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
 
-            print_dbg('det_inv = {}'.format(det_inv))
+            # print_dbg('det_inv = {}'.format(det_inv))
 
             jtv = np.dot(np.transpose(J), v_cur)
 
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv, jtv)
 
-            # 4a. Recompute sse
+            # 4a. Peek Fx
             x_peek = x_cur + dx
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
 
-            sse_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
+            Ed_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
+            Ew_peek = np.sum(np.power(x_peek, 2))
 
-            print_dbg('mu={} sse_peek={} dx={}'.format(
+            Fx_peek = self.beta * Ed_peek + self.alpha * Ew_peek
+
+            print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
                 self.mu,
-                sse_peek,
-                np.transpose(dx)))
+                self.Fx,
+                Fx_peek))
 
             # 4b. Update
-            if sse_peek < self.sse:
+            if Fx_peek < self.Fx:
 
-                self.sse = sse_peek
+                self.Fx = Fx_peek
                 self.mu /= self.theta
                 self.W1 = W1
                 self.b1vec = b1vec
                 self.W2 = W2
                 self.b2vec = b2vec
+
+                self.update_bay_reg_params(JTJ, Ed_peek, Ew_peek, Fx_peek)
 
                 break
 
@@ -523,9 +541,33 @@ class LevenbergMarquardBackprop():
                     'Converged, breaking out, k = {} mu = {}'.format(
                         k,
                         self.mu))
+
                 return True
 
         return False
+
+    def update_bay_reg_params(self, JTJ, Ed, Ew, Fx_peek):
+
+        # Compute eff. nr. of wgts using old alpha
+        H = 2. * (self.beta * JTJ + self.alpha * np.identity(
+            JTJ.shape[0]))
+        H_inv = np.linalg.inv(H)
+        self.gamma = self.n - 2. * self.alpha * np.trace(H_inv)
+
+        # Only now we recompute alpha and beta
+        self.alpha = 0.5 * self.gamma / Ew
+        self.beta = 0.5 * (self.N - self.gamma) / Ed
+        self.Fx = self.beta * Ed + self.alpha * Ew
+
+        self.dFx = self.Fx - Fx_peek
+        
+
+        # print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f})'.format(
+        #     self.gamma,
+        #     self.alpha,
+        #     self.beta,
+        #     self.Fx,
+        #     np.abs(self.Fx - Fx_peek)))
 
     def print_weights(self):
 
@@ -533,4 +575,3 @@ class LevenbergMarquardBackprop():
         print('b1vec = {}'.format(self.b1vec))
         print('W2    = {}'.format(self.W2))
         print('b2vec = {}'.format(self.b2vec))
-

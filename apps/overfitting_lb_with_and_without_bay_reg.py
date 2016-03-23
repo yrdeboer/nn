@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from nets.levenberg_marquard_backprop_bay_reg import LevenbergMarquardBackprop
+# from nets.levenberg_marquard_backprop_bay_reg import LevenbergMarquardBackprop
+from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 import utils as nn_utils
 import sys
 
@@ -109,8 +110,8 @@ print('Initial x:\n{}'.format(np.transpose(sp.weights_to_x())))
 
 print('Initial response:')
 print(sp.get_response(train_input))
-print('Initial sse:')
-print(sp.get_sse_error())
+print('Initial rms:')
+print(sp.get_rms_error())
 print('--')
 
 for i in range(1, iteration_count):
@@ -119,11 +120,18 @@ for i in range(1, iteration_count):
 
     if i < 25 or i in plot_points or converged:
 
-        sse = sp.sse
+        sse = sp.get_rms_error()
 
-        print(
-            'Iteration: {:5} sse: {:.8f} g_norm: {:.6f} converged: {}'.format(
-                i, sse, sp.g_norm, converged))
+        gamma = 0.0
+        if hasattr(sp, 'gamma'):
+            gamma = sp.gamma
+        
+        msg = 'Iteration: {:5} sse: {:.8f} '.format(i, sse)
+        msg += 'g_norm: {:.6f} gamma = {:.2f} converged = {}'.format(
+            sp.g_norm,
+            gamma,
+            converged)
+        print(msg)
         sys.stdout.flush()
 
         plt.subplot(2, 1, 1)
