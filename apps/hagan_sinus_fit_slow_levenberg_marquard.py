@@ -52,7 +52,7 @@ def get_training_set(interpolate, add_noise):
 
 (train_input, train_target) = get_training_set(False, True)
 
-S1 = 20
+S1 = 10
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -75,16 +75,27 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 1000
+iteration_count = 200
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
-plt.subplot(2, 1, 1)
+plt.subplot(2, 2, 1)
 plt.axis([1, 10. * iteration_count, 1e-6, 10.])
 plt.yscale('log')
 plt.xscale('log')
 plt.ion()
+
+plt.subplot(2, 2, 3)
+plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+plt.yscale('log')
+plt.xscale('log')
+
+plt.subplot(2, 2, 4)
+plt.axis([1, 10. * iteration_count, 0., 100.])
+#plt.yscale('log')
+plt.xscale('log')
+
 
 x_g = np.arange(-2., 2., .01)
 y_g = g(x_g)
@@ -103,7 +114,7 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    if i < 25 or i == iteration_count-1 or i in plot_points or converged:
+    if i < 25 or i == iteration_count-1 or i in plot_points or converged or i%2==0:
 
         rms = sp.get_rms_error()
 
@@ -112,10 +123,10 @@ for i in range(1, iteration_count):
                 i, rms, sp.g_norm, converged))
         sys.stdout.flush()
 
-        plt.subplot(2, 1, 1)
+        plt.subplot(2, 2, 1)
         plt.scatter(i, rms, c='b')
 
-        plt.subplot(2, 1, 2)
+        plt.subplot(2, 2, 2)
         plt.cla()
 
         plt.plot(x_g, y_g)
@@ -126,6 +137,12 @@ for i in range(1, iteration_count):
 
         plt.scatter(train_input[0], train_target[0], c='r', marker='s')
 
+        plt.subplot(2, 2, 3)
+        plt.scatter(i, sp.alpha / sp.beta)
+
+        plt.subplot(2, 2, 4)
+        plt.scatter(i, sp.gamma)
+        
         plt.show()
         plt.pause(.00001)
 
