@@ -37,14 +37,14 @@ def get_training_set(interpolate, add_noise):
     gaussian noise is added to g(x).
     """
 
-    step = 0.1
+    step = 0.2
     if interpolate:
         step = step / 3.
 
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.25, y.shape)
+        y += np.random.normal(0.0, 0.01, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
@@ -83,9 +83,9 @@ plot_points = [int(i) for i in list(logspace)]
 plt.ion()
 
 plt.subplot(2, 2, 1)
-plt.title('$F(x)$')
-plt.axis([1, 10. * iteration_count, 1., 1000.])
-# plt.yscale('log')
+plt.title('$\Delta\,F(x)$')
+plt.axis([1, 10. * iteration_count, 1e-4, 100.])
+plt.yscale('log')
 plt.xscale('log')
 
 
@@ -128,8 +128,10 @@ for i in range(1, iteration_count):
                 i, rms, sp.g_norm, converged))
         sys.stdout.flush()
 
+        print('dFx = {}'.format(sp.g_norm))
+        
         plt.subplot(2, 2, 1)
-        plt.scatter(i, sp.Fx, c='b')
+        plt.scatter(i, sp.dFx, c='b')
 
         plt.subplot(2, 2, 2)
         plt.cla()

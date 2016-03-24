@@ -63,6 +63,8 @@ class LevenbergMarquardBackprop():
         self.N = self.V.shape[1] * self.S1
         self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
 
+        print('N={} n={}'.format(self.N, self.n))
+
         Ed = self.get_sse_error()
         Ew = np.sum(np.power(self.weights_to_x(), 2))
         self.gamma = self.n
@@ -71,10 +73,6 @@ class LevenbergMarquardBackprop():
 
         alpha = self.alpha
         beta = self.beta
-
-        alpha = 1.
-        beta = 4.
-        
         self.Fx = beta * Ed + alpha * Ew
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
@@ -480,6 +478,9 @@ class LevenbergMarquardBackprop():
 
         g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
+        if self.g_norm < 1e-6:
+            print('Converged, g_norm = {}'.format(self.g_norm))
+            return True
 
         k = 0
 
@@ -521,9 +522,6 @@ class LevenbergMarquardBackprop():
 
             beta = self.beta
             alpha = self.alpha
-
-            alpha = 1.
-            beta = 4.
             Fx_peek = beta * Ed_peek + alpha * Ew_peek
 
             print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
@@ -546,7 +544,7 @@ class LevenbergMarquardBackprop():
 
             else:
                 self.mu *= self.theta
-
+                
             if self.mu > 1e10:
                 print_dbg(
                     'Converged, breaking out, k = {} mu = {}'.format(
@@ -570,24 +568,20 @@ class LevenbergMarquardBackprop():
         self.alpha = 0.5 * self.gamma / Ew
         self.beta = 0.5 * (self.N - self.gamma) / Ed
 
-        Fx_old = self.Fx
+        self.dFx = self.Fx - Fx_peek
 
         alpha = self.alpha
         beta = self.beta
-
-        alpha = 1.
-        beta = 4.
-
         self.Fx = beta * Ed + alpha * Ew
 
-        self.dFx = self.Fx - Fx_old
-
-        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f})'.format(
+        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f}) Ed={:.4f} Ew={:.4f}'.format(
             self.gamma,
             self.alpha,
             self.beta,
             self.Fx,
-            np.abs(self.Fx - Fx_peek)))
+            np.abs(self.Fx - Fx_peek),
+            Ed,
+            Ew))
 
     def print_weights(self):
 
