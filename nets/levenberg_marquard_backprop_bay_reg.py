@@ -68,7 +68,14 @@ class LevenbergMarquardBackprop():
         self.gamma = self.n
         self.alpha = 0.5 * self.gamma / Ew
         self.beta = 0.5 * (self.N - self.gamma) / Ed
-        self.Fx = self.beta * Ed + self.alpha * Ew
+
+        alpha = self.alpha
+        beta = self.beta
+
+        alpha = 1.
+        beta = 4.
+        
+        self.Fx = beta * Ed + alpha * Ew
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
             self.gamma,
@@ -512,7 +519,12 @@ class LevenbergMarquardBackprop():
             Ed_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
             Ew_peek = np.sum(np.power(x_peek, 2))
 
-            Fx_peek = self.beta * Ed_peek + self.alpha * Ew_peek
+            beta = self.beta
+            alpha = self.alpha
+
+            alpha = 1.
+            beta = 4.
+            Fx_peek = beta * Ed_peek + alpha * Ew_peek
 
             print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
                 self.mu,
@@ -559,8 +571,14 @@ class LevenbergMarquardBackprop():
         self.beta = 0.5 * (self.N - self.gamma) / Ed
 
         Fx_old = self.Fx
-        
-        self.Fx = self.beta * Ed + self.alpha * Ew
+
+        alpha = self.alpha
+        beta = self.beta
+
+        alpha = 1.
+        beta = 4.
+
+        self.Fx = beta * Ed + alpha * Ew
 
         self.dFx = self.Fx - Fx_old
 

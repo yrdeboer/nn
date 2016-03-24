@@ -52,7 +52,7 @@ def get_training_set(interpolate, add_noise):
 
 (train_input, train_target) = get_training_set(False, True)
 
-S1 = 10
+S1 = 20
 
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
@@ -80,20 +80,25 @@ logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
-plt.subplot(2, 2, 1)
-plt.axis([1, 10. * iteration_count, 1e-6, 10.])
-plt.yscale('log')
-plt.xscale('log')
 plt.ion()
 
+plt.subplot(2, 2, 1)
+plt.title('$F(x)$')
+plt.axis([1, 10. * iteration_count, 1., 1000.])
+# plt.yscale('log')
+plt.xscale('log')
+
+
 plt.subplot(2, 2, 3)
+plt.title(r'$\alpha / \beta$')
 plt.axis([1, 10. * iteration_count, 1e-5, 10.])
 plt.yscale('log')
 plt.xscale('log')
 
 plt.subplot(2, 2, 4)
+plt.title(r'$\gamma$')
 plt.axis([1, 10. * iteration_count, 0., 100.])
-#plt.yscale('log')
+# plt.yscale('log')
 plt.xscale('log')
 
 
@@ -124,7 +129,7 @@ for i in range(1, iteration_count):
         sys.stdout.flush()
 
         plt.subplot(2, 2, 1)
-        plt.scatter(i, rms, c='b')
+        plt.scatter(i, sp.Fx, c='b')
 
         plt.subplot(2, 2, 2)
         plt.cla()
