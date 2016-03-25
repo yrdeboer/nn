@@ -11,7 +11,7 @@ def g(p):
     The function used in the example (equation 11.57)
     """
 
-    return 1. + np.sin(0.5 * np.pi * p)
+    return np.sin(np.pi * p)
 
 
 def get_training_set(interpolate, add_noise):
@@ -37,14 +37,14 @@ def get_training_set(interpolate, add_noise):
     gaussian noise is added to g(x).
     """
 
-    step = 0.2
+    step = 0.1
     if interpolate:
         step = step / 3.
 
-    x = np.arange(-2., 2.1, step)
+    x = np.arange(-1., 1.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.30, y.shape)
+        y += np.random.normal(0.0, 0.10, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
@@ -88,6 +88,9 @@ plt.axis([1, 10. * iteration_count, 1e-7, 100.])
 plt.yscale('log')
 plt.xscale('log')
 
+plt.subplot(2, 2, 2)
+plt.title('Fit')
+plt.axis([-1., 1., -1.5, 1.5])
 
 plt.subplot(2, 2, 3)
 plt.title(r'$\alpha / \beta$')
@@ -103,7 +106,7 @@ plt.xlabel('Iteration')
 plt.xscale('log')
 
 
-x_g = np.arange(-2., 2., .01)
+x_g = np.arange(-1., 1., .01)
 y_g = g(x_g)
 
 print('Initial weights:')
