@@ -73,7 +73,7 @@ class LevenbergMarquardBackprop():
 
         alpha = self.alpha
         beta = self.beta
-        self.Fx = Ed + (alpha/beta) * Ew
+        self.Fx = beta * Ed + alpha * Ew
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
             self.gamma,
@@ -416,8 +416,8 @@ class LevenbergMarquardBackprop():
 
         len = v_cur.shape[0] + x_cur.shape[0]
         vu_cur = np.zeros((len, v_cur.shape[1]))
-        vu_cur[0:v_cur.shape[0]] = v_cur
-        vu_cur[v_cur.shape[0]:len] = x_cur * np.sqrt(self.alpha / self.beta)
+        vu_cur[0:v_cur.shape[0]] = v_cur * np.sqrt(self.beta)
+        vu_cur[v_cur.shape[0]:len] = x_cur * np.sqrt(self.alpha)
 
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
@@ -470,10 +470,10 @@ class LevenbergMarquardBackprop():
                 # print_dbg(
                 #     '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
 
-                self.Jac[h, l] = s*a
+                self.Jac[h, l] = s*a * np.sqrt(self.beta)
 
         # From here we treat the Bayesian part
-        jac_bay = np.sqrt(self.alpha / self.beta) * np.identity(self.n)
+        jac_bay = np.sqrt(self.alpha) * np.identity(self.n)
         self.Jac[Nrow_j:Nrow_j + Nrow_bay] = jac_bay
 
         J = self.Jac
@@ -527,7 +527,7 @@ class LevenbergMarquardBackprop():
 
             beta = self.beta
             alpha = self.alpha
-            Fx_peek = Ed_peek + (alpha/beta) * Ew_peek
+            Fx_peek = beta * Ed_peek + alpha * Ew_peek
 
             print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
                 self.mu,
@@ -577,7 +577,7 @@ class LevenbergMarquardBackprop():
 
         alpha = self.alpha
         beta = self.beta
-        self.Fx = Ed + (alpha/beta) * Ew
+        self.Fx = beta * Ed + alpha * Ew
 
         print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f}) Ed={:.4f} Ew={:.4f} a/b={:.6f}'.format(
             self.gamma,

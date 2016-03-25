@@ -44,7 +44,7 @@ def get_training_set(interpolate, add_noise):
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.30, y.shape)
+        y += np.random.normal(0.0, 0.05, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
