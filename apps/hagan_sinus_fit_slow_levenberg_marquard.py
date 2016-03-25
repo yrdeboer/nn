@@ -60,6 +60,7 @@ kwargs['input_dim'] = train_input.shape[0]
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = 1
 
+kwargs['use_bay_reg'] = True
 
 kwargs['layer1_transfer_function'] = nn_utils.logsig
 kwargs['layer2_transfer_function'] = nn_utils.purelin
@@ -75,7 +76,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10000
+iteration_count = 1000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 

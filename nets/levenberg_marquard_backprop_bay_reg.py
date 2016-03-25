@@ -54,26 +54,40 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 (self.S2, 1)) - 0.5) * mult_factor
 
+        self.use_bay_reg = kwargs.get('use_bay_reg', False)
+
         # Initialise Bayesian regularisation parameters
         # Note, the objective function as per
         # Hagan eq. (13.4) p. 13-8:
         #
         #    F(x) = beta * Ed + alpha * Ew
 
-        self.N = self.V.shape[1] * self.S1
-        self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
-
-        print('N={} n={}'.format(self.N, self.n))
+        # If not use Bayesian regulariation, we still allow
+        # regularisation using alpha/beta, default value for
+        # alpha is 0 and beta is 1
 
         Ed = self.get_sse_error()
         Ew = np.sum(np.power(self.weights_to_x(), 2))
-        self.gamma = self.n
-        self.alpha = 0.5 * self.gamma / Ew
-        self.beta = 0.5 * (self.N - self.gamma) / Ed
+        if self.use_bay_reg:
 
-        alpha = self.alpha
-        beta = self.beta
-        self.Fx = beta * Ed + alpha * Ew
+            self.N = self.V.shape[1] * self.S1
+            self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
+
+            print('N={} n={}'.format(self.N, self.n))
+
+            self.gamma = self.n
+            self.alpha = 0.5 * self.gamma / Ew
+            self.beta = 0.5 * (self.N - self.gamma) / Ed
+
+            alpha = self.alpha
+            beta = self.beta
+            self.Fx = beta * Ed + alpha * Ew
+
+        else:
+            self.alpha = 0.
+            self.beta = 1.
+            self.Fx = Ed + (self.alpha/self.beta) * Ew
+            self.gamma = 1.
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
             self.gamma,
@@ -406,7 +420,8 @@ class LevenbergMarquardBackprop():
 
         # 1b. Calculate the errors
         ERR = y - A2
-        # self.sse = self.get_sse_error_br()  # Updates self.alpha and self.beta
+        # self.sse = self.get_sse_error_br()
+        # # Updates self.alpha and self.beta
 
         print_dbg('ERR:\n{}'.format(ERR))
         # print_dbg('  self.sse init to: {}'.format(self.sse))
@@ -414,10 +429,13 @@ class LevenbergMarquardBackprop():
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
 
-        len = v_cur.shape[0] + x_cur.shape[0]
-        vu_cur = np.zeros((len, v_cur.shape[1]))
-        vu_cur[0:v_cur.shape[0]] = v_cur * np.sqrt(self.beta)
-        vu_cur[v_cur.shape[0]:len] = x_cur * np.sqrt(self.alpha)
+        if self.use_bay_reg:
+
+            l = v_cur.shape[0] + x_cur.shape[0]
+            vu_cur = np.zeros((l, v_cur.shape[1]))
+            vu_cur[0:v_cur.shape[0]] = v_cur * np.sqrt(self.beta)
+            vu_cur[v_cur.shape[0]:l] = x_cur * np.sqrt(self.alpha)
+            v_cur = vu_cur
 
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
@@ -451,9 +469,13 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j = S1 * R + S1 + S2 * S1 + S2
 
-        print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
+        Nrow_bay = self.n if self.use_bay_reg else 0
 
-        Nrow_bay = self.n
+        print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l) (Nrow_bay={})'.format(
+            Nrow_j,
+            Ncol_j,
+            Nrow_bay))
+
         self.Jac = np.zeros((Nrow_j + Nrow_bay, Ncol_j))
 
         for h in range(Nrow_j):
@@ -470,21 +492,22 @@ class LevenbergMarquardBackprop():
                 # print_dbg(
                 #     '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
 
-                self.Jac[h, l] = s*a * np.sqrt(self.beta)
+                self.Jac[h, l] = s*a
 
-        # From here we treat the Bayesian part
-        jac_bay = np.sqrt(self.alpha) * np.identity(self.n)
-        self.Jac[Nrow_j:Nrow_j + Nrow_bay] = jac_bay
+        if self.use_bay_reg:
+            self.Jac *= np.sqrt(self.beta)
+
+            jac_bay = np.sqrt(self.alpha) * np.identity(self.n)
+            self.Jac[Nrow_j:Nrow_j + Nrow_bay] = jac_bay
 
         J = self.Jac
-        JT = np.transpose(J)
         JT = np.transpose(J)
         JTJ = np.dot(JT, J)
 
         # print_dbg('JT = {}'.format(JT))
         # print_dbg('v_cur = {}'.format(v_cur))
 
-        g = 2. * np.dot(JT, vu_cur)
+        g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
 
         k = 0
@@ -513,7 +536,7 @@ class LevenbergMarquardBackprop():
 
             # print_dbg('det_inv = {}'.format(det_inv))
 
-            jtv = np.dot(np.transpose(J), vu_cur)
+            jtv = np.dot(np.transpose(J), v_cur)
 
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv, jtv)
@@ -524,26 +547,30 @@ class LevenbergMarquardBackprop():
 
             Ed_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
             Ew_peek = np.sum(np.power(x_peek, 2))
+            if self.use_bay_reg:
+                beta = self.beta
+                alpha = self.alpha
+                Fx_peek = beta * Ed_peek + alpha * Ew_peek
 
-            beta = self.beta
-            alpha = self.alpha
-            Fx_peek = beta * Ed_peek + alpha * Ew_peek
-
-            print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
+            else:
+                Fx_peek = Ed_peek + (self.alpha/self.beta) * Ew_peek
+    
+            print_dbg('mu={} self.Fx={:.3f}'.format(
                 self.mu,
-                self.Fx,
-                Fx_peek))
+                self.Fx))
 
             # 4b. Update
             if Fx_peek < self.Fx:
 
+                self.Fx = Fx_peek
                 self.mu /= self.theta
                 self.W1 = W1
                 self.b1vec = b1vec
                 self.W2 = W2
                 self.b2vec = b2vec
 
-                self.update_bay_reg_params(JTJ, Ed_peek, Ew_peek, Fx_peek)
+                if self.use_bay_reg:
+                    self.update_bay_reg_params(JTJ, Ed_peek, Ew_peek)
 
                 break
 
@@ -551,7 +578,7 @@ class LevenbergMarquardBackprop():
                 self.mu *= self.theta
                 
             if self.mu > 1e10:
-                print_dbg(
+                print(
                     'Converged, breaking out, k = {} mu = {}'.format(
                         k,
                         self.mu))
@@ -560,7 +587,7 @@ class LevenbergMarquardBackprop():
 
         return False
 
-    def update_bay_reg_params(self, JTJ, Ed, Ew, Fx_peek):
+    def update_bay_reg_params(self, JTJ, Ed, Ew):
 
         # Compute eff. nr. of wgts using old alpha
         H = 2. * (self.beta * JTJ + self.alpha * np.identity(
@@ -573,18 +600,15 @@ class LevenbergMarquardBackprop():
         self.alpha = 0.5 * self.gamma / Ew
         self.beta = 0.5 * (self.N - self.gamma) / Ed
 
-        self.dFx = self.Fx - Fx_peek
-
         alpha = self.alpha
         beta = self.beta
         self.Fx = beta * Ed + alpha * Ew
 
-        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f}) Ed={:.4f} Ew={:.4f} a/b={:.6f}'.format(
+        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} Ed={:.4f} Ew={:.4f} a/b={:.6f}'.format(
             self.gamma,
             self.alpha,
             self.beta,
             self.Fx,
-            np.abs(self.Fx - Fx_peek),
             Ed,
             Ew,
             self.alpha/self.beta))
