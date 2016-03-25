@@ -414,6 +414,11 @@ class LevenbergMarquardBackprop():
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
 
+        len = v_cur.shape[0] + x_cur.shape[0]
+        vu_cur = np.zeros((len, v_cur.shape[1]))
+        vu_cur[0:v_cur.shape[0]] = v_cur
+        vu_cur[v_cur.shape[0]:len] = x_cur * np.sqrt(self.alpha / self.beta)
+
         # 2a. Initialise and compute the sensitivies
         #     using Eq. (12.46) and Eq. (12.47) and
         #     also the augmented Marquard sensitiviy
@@ -448,10 +453,8 @@ class LevenbergMarquardBackprop():
 
         print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
-        self.Jac = np.zeros((Nrow_j, Ncol_j))
-
-        J = self.Jac
-        JT = np.transpose(J)
+        Nrow_bay = self.n
+        self.Jac = np.zeros((Nrow_j + Nrow_bay, Ncol_j))
 
         for h in range(Nrow_j):
 
@@ -469,14 +472,19 @@ class LevenbergMarquardBackprop():
 
                 self.Jac[h, l] = s*a
 
+        # From here we treat the Bayesian part
+        jac_bay = np.sqrt(self.alpha / self.beta) * np.identity(self.n)
+        self.Jac[Nrow_j:Nrow_j + Nrow_bay] = jac_bay
+
         J = self.Jac
+        JT = np.transpose(J)
         JT = np.transpose(J)
         JTJ = np.dot(JT, J)
 
         # print_dbg('JT = {}'.format(JT))
         # print_dbg('v_cur = {}'.format(v_cur))
 
-        g = 2. * np.dot(JT, v_cur)
+        g = 2. * np.dot(JT, vu_cur)
         self.g_norm = np.linalg.norm(g)
 
         k = 0
@@ -505,7 +513,7 @@ class LevenbergMarquardBackprop():
 
             # print_dbg('det_inv = {}'.format(det_inv))
 
-            jtv = np.dot(np.transpose(J), v_cur)
+            jtv = np.dot(np.transpose(J), vu_cur)
 
             # Convert the error to a columns vector as per Hagan eq. 12.35
             dx = -np.dot(det_inv, jtv)

@@ -44,7 +44,7 @@ def get_training_set(interpolate, add_noise):
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.15, y.shape)
+        y += np.random.normal(0.0, 0.1, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
@@ -75,7 +75,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10000
+iteration_count = 5000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -120,7 +120,7 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    if i < 25 or i == iteration_count-1 or i in plot_points or converged:
+    if i < 200 or i == iteration_count-1 or i in plot_points or converged:
 
         rms = sp.get_rms_error()
 
