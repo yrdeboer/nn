@@ -73,7 +73,7 @@ class LevenbergMarquardBackprop():
 
         alpha = self.alpha
         beta = self.beta
-        self.Fx = beta * Ed + alpha * Ew
+        self.Fx = Ed + (alpha/beta) * Ew
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
             self.gamma,
@@ -527,7 +527,7 @@ class LevenbergMarquardBackprop():
 
             beta = self.beta
             alpha = self.alpha
-            Fx_peek = beta * Ed_peek + alpha * Ew_peek
+            Fx_peek = Ed_peek + (alpha/beta) * Ew_peek
 
             print_dbg('mu={} self.Fx={:.3f} Fx_peek={:.3f}'.format(
                 self.mu,
@@ -577,16 +577,17 @@ class LevenbergMarquardBackprop():
 
         alpha = self.alpha
         beta = self.beta
-        self.Fx = beta * Ed + alpha * Ew
+        self.Fx = Ed + (alpha/beta) * Ew
 
-        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f}) Ed={:.4f} Ew={:.4f}'.format(
+        print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} (dFx={:.4f}) Ed={:.4f} Ew={:.4f} a/b={:.6f}'.format(
             self.gamma,
             self.alpha,
             self.beta,
             self.Fx,
             np.abs(self.Fx - Fx_peek),
             Ed,
-            Ew))
+            Ew,
+            self.alpha/self.beta))
 
     def print_weights(self):
 

@@ -161,7 +161,7 @@ if not TEST:
 kwargs = dict()
 kwargs['training_data'] = (train_input, train_target)
 kwargs['input_dim'] = train_input.shape[0]
-kwargs['layer1_neuron_count'] = 20
+kwargs['layer1_neuron_count'] = 10
 kwargs['layer2_neuron_count'] = 1
 
 kwargs['layer1_transfer_function'] = nn_utils.tansig
@@ -181,22 +181,33 @@ if not TEST:
     print_dbg('Weights:')
     sp.print_weights()
 
-iteration_count = 10000
+iteration_count = 250
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 if not TEST:
 
     # Interactive plotting of the mean squared error
-    plt.subplot(3,1,1)
+    plt.subplot(2, 2, 1)
     plt.axis([1, 10. * iteration_count, 1e-7, 100.])
     plt.yscale('log')
     plt.xscale('log')
+    plt.title('rms')
 
-    plt.subplot(3, 1, 3)
+    plt.subplot(2, 2, 2)
+    plt.title('fit')
+    
+    plt.subplot(2, 2, 3)
     plt.axis([1, 10. * iteration_count, 0, 100])
     # plt.yscale('log')
     plt.xscale('log')
+    plt.title('$\gamma$')
+
+    plt.subplot(2, 2, 4)
+    plt.axis([1, 10. * iteration_count, 1e-7, 100.])
+    plt.yscale('log')
+    plt.xscale('log')
+    # plt.title('$\alpha$ - $\beta$')
 
     plt.ion()
 
@@ -218,18 +229,20 @@ for i in range(1, iteration_count):
                 i, rms_trn, rms_val, sp.dFx), end='')
             print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))
 
-            plt.subplot(3, 1, 1)
+            plt.subplot(2, 2, 1)
             plt.scatter(i, rms_trn, c='b')
             plt.scatter(i, rms_val, c='r')
-            plt.scatter(i, sp.dFx, c='g')
 
-            plt.subplot(3, 1, 2)
+            plt.subplot(2, 2, 2)
             plt.cla()
             plt.scatter(train_target[0], sp.get_response(train_input), c='b')
             plt.scatter(0.5 + val_tar[0],  sp.get_response(val_inp), c='r')
 
-            plt.subplot(3, 1, 3)
+            plt.subplot(2, 2, 3)
             plt.scatter(i, sp.gamma)
+
+            plt.subplot(2, 2, 4)
+            plt.scatter(i, sp.alpha/sp.beta)
 
             plt.show()
 
