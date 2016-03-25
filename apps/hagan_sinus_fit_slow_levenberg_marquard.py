@@ -44,7 +44,7 @@ def get_training_set(interpolate, add_noise):
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.01, y.shape)
+        y += np.random.normal(0.0, 0.15, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
@@ -75,7 +75,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 200
+iteration_count = 10000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -83,7 +83,7 @@ plot_points = [int(i) for i in list(logspace)]
 plt.ion()
 
 plt.subplot(2, 2, 1)
-plt.title('$\Delta\,F(x)$')
+plt.title(r'$\nabla\,sse$')
 plt.axis([1, 10. * iteration_count, 1e-4, 100.])
 plt.yscale('log')
 plt.xscale('log')
@@ -91,13 +91,14 @@ plt.xscale('log')
 
 plt.subplot(2, 2, 3)
 plt.title(r'$\alpha / \beta$')
-plt.axis([1, 10. * iteration_count, 1e-5, 10.])
+plt.axis([1, 10. * iteration_count, 1e-8, 10.])
 plt.yscale('log')
 plt.xscale('log')
 
 plt.subplot(2, 2, 4)
 plt.title(r'$\gamma$')
 plt.axis([1, 10. * iteration_count, 0., 100.])
+plt.xlabel('Iteration')
 # plt.yscale('log')
 plt.xscale('log')
 
@@ -119,7 +120,7 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    if i < 25 or i == iteration_count-1 or i in plot_points or converged or i%2==0:
+    if i < 25 or i == iteration_count-1 or i in plot_points or converged:
 
         rms = sp.get_rms_error()
 

@@ -354,8 +354,21 @@ SUCCESS (Hagan 2-layer simple backprop)
   the procedure no more detailed than Hagan.
 <p>
   <h3>Why do alpha and beta not stabilise?!</h3>
+
+  <h5 align=right>2016 mar 25</h5>
   
-    
+  Posted this question on StackExchange: <a href="http://stats.stackexchange.com/questions/203645/bayesian-regularisation-for-anns-why-does-the-iterative-algo-work">http://stats.stackexchange.com/questions/203645/bayesian-regularisation-for-anns-why-does-the-iterative-algo-work</a>.
+<p>
+  It occurred to me that I take the Jacobian as per Hagan eq. (12.37).
+<p>
+  Its elements are derivatives to the weights of v's, where the v's are the squared items in the objective function <i>F(x) = Sum (v)^2</i>, where the v's are the differences between the training target data and the network response.
+<p>
+  However, With the new objective function <i>F(x) = beta*Ed + alpha*Ew</i>, we have extra v's, namely: <i>sqrt(alpha/beta)*wgt_i</i>!
+<p>
+  And the derivatives to the weights are easy to compute, no backpropagation needed!
+<p>
+  
+      
 
   
     

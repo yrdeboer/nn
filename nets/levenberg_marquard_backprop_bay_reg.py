@@ -478,9 +478,6 @@ class LevenbergMarquardBackprop():
 
         g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
-        if self.g_norm < 1e-6:
-            print('Converged, g_norm = {}'.format(self.g_norm))
-            return True
 
         k = 0
 
