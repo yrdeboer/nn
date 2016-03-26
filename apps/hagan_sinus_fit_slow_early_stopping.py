@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from nets.levenberg_marquard_backprop_bay_reg import LevenbergMarquardBackprop
+from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 import utils as nn_utils
 import sys
 
@@ -60,10 +60,6 @@ kwargs['input_dim'] = train_input.shape[0]
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = 1
 
-kwargs['reg_mode'] = LevenbergMarquardBackprop.REG_MODE_MANUAL
-kwargs['alpha'] = 0.
-kwargs['beta'] = 1.
-
 kwargs['layer1_transfer_function'] = nn_utils.logsig
 kwargs['layer2_transfer_function'] = nn_utils.purelin
 
@@ -85,24 +81,10 @@ plot_points = [int(i) for i in list(logspace)]
 # Interactive plotting of the mean squared error
 plt.ion()
 
-plt.subplot(2, 2, 1)
+plt.subplot(2, 1, 1)
 plt.title(r'rms')
 plt.axis([1, 10. * iteration_count, 1e-7, 100.])
 plt.yscale('log')
-plt.xscale('log')
-
-
-plt.subplot(2, 2, 3)
-plt.title(r'$\alpha / \beta$')
-plt.axis([1, 10. * iteration_count, 1e-8, 10.])
-plt.yscale('log')
-plt.xscale('log')
-
-plt.subplot(2, 2, 4)
-plt.title(r'$\gamma$')
-plt.axis([1, 10. * iteration_count, 0., 100.])
-plt.xlabel('Iteration')
-# plt.yscale('log')
 plt.xscale('log')
 
 
@@ -123,8 +105,7 @@ for i in range(1, iteration_count):
 
     converged = sp.train_step()
 
-    #if i < 25 or i == iteration_count-1 or i in plot_points or converged:
-    if i % 5 == 0 or converged:
+    if i < 25 or i == iteration_count-1 or i in plot_points or converged:
 
         rms = sp.get_rms_error()
 
@@ -133,10 +114,10 @@ for i in range(1, iteration_count):
                 i, rms, sp.g_norm, converged))
         sys.stdout.flush()
 
-        plt.subplot(2, 2, 1)
+        plt.subplot(2, 1, 1)
         plt.scatter(i, rms, c='b')
 
-        plt.subplot(2, 2, 2)
+        plt.subplot(2, 1, 2)
         plt.cla()
 
         plt.plot(x_g, y_g)
@@ -147,12 +128,6 @@ for i in range(1, iteration_count):
 
         plt.scatter(train_input[0], train_target[0], c='r', marker='s')
 
-        plt.subplot(2, 2, 3)
-        plt.scatter(i, sp.alpha / sp.beta)
-
-        plt.subplot(2, 2, 4)
-        plt.scatter(i, sp.gamma)
-        
         plt.show()
         plt.pause(.00001)
 

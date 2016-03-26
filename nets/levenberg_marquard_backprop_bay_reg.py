@@ -14,6 +14,18 @@ class LevenbergMarquardBackprop():
           For now, still testing ...
     """
 
+    # Manual regularisation, equal no regularisation if self.alpha = 0.
+    # Regularises sum of weights as additional term to the error function,
+    # with penalty self.alpha / self.beta, but Jacobian derived from
+    # SSE only.
+    REG_MODE_MANUAL = 0
+
+    # Attempted Bayes with adapted Jacobian
+    REG_MODE_BAYES_JAC = 10
+
+    # Attempted Bayes, use Jacobian of SSE only
+    REG_MODE_BAYES_NAIVE = 100
+
     def __init__(self, * args, ** kwargs):
 
         self.R = kwargs.get('input_dim', None)
@@ -54,9 +66,14 @@ class LevenbergMarquardBackprop():
             self.b2vec = (np.random.random_sample(
                 (self.S2, 1)) - 0.5) * mult_factor
 
-        self.use_bay_reg = kwargs.get('use_bay_reg', False)
+        self.reg_mode = kwargs.get(
+            'reg_mode',
+            LevenbergMarquardBackprop.REG_MODE_MANUAL)
 
         # Initialise Bayesian regularisation parameters
+        #
+        # For Bayes Jacobian:
+        #
         # Note, the objective function as per
         # Hagan eq. (13.4) p. 13-8:
         #
@@ -68,26 +85,29 @@ class LevenbergMarquardBackprop():
 
         Ed = self.get_sse_error()
         Ew = np.sum(np.power(self.weights_to_x(), 2))
-        if self.use_bay_reg:
+        self.N = self.V.shape[1] * self.S1
+        self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
+        self.gamma = self.n
 
-            self.N = self.V.shape[1] * self.S1
-            self.n = self.S1 * self.R + self.S1 + self.S2 * self.S1 + self.S2
+        if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_MANUAL:
+            self.alpha = kwargs.get('alpha', 0.)
+            self.beta = kwargs.get('beta', 1.)
+            self.Fx = Ed + (self.alpha/self.beta) * Ew
 
-            print('N={} n={}'.format(self.N, self.n))
-
-            self.gamma = self.n
+        else:
             self.alpha = 0.5 * self.gamma / Ew
             self.beta = 0.5 * (self.N - self.gamma) / Ed
 
-            alpha = self.alpha
-            beta = self.beta
-            self.Fx = beta * Ed + alpha * Ew
+            if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
+                self.Fx = self.beta * Ed + self.alpha * Ew
 
-        else:
-            self.alpha = 0.
-            self.beta = 1.
-            self.Fx = Ed + (self.alpha/self.beta) * Ew
-            self.gamma = 1.
+            elif self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_NAIVE:
+                self.Fx = Ed + (self.alpha/self.beta) * Ew
+
+            else:
+                raise ValueError(
+                    'Invalid choice for regularisation mode: {}'.format(
+                        self.reg_mode))
 
         print('Init gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f}'.format(
             self.gamma,
@@ -429,7 +449,8 @@ class LevenbergMarquardBackprop():
         v_cur = self.get_v_from_error(ERR)
         x_cur = self.weights_to_x()
 
-        if self.use_bay_reg:
+        # For Bayesian reg the input elements need to be adopted
+        if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
 
             l = v_cur.shape[0] + x_cur.shape[0]
             vu_cur = np.zeros((l, v_cur.shape[1]))
@@ -469,7 +490,10 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j = S1 * R + S1 + S2 * S1 + S2
 
-        Nrow_bay = self.n if self.use_bay_reg else 0
+        # The Jacobian for Bayesian reg gets an extra row for each weight
+        Nrow_bay = 0
+        if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
+            Nrow_bay = self.n
 
         print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l) (Nrow_bay={})'.format(
             Nrow_j,
@@ -494,9 +518,8 @@ class LevenbergMarquardBackprop():
 
                 self.Jac[h, l] = s*a
 
-        if self.use_bay_reg:
+        if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
             self.Jac *= np.sqrt(self.beta)
-
             jac_bay = np.sqrt(self.alpha) * np.identity(self.n)
             self.Jac[Nrow_j:Nrow_j + Nrow_bay] = jac_bay
 
@@ -547,14 +570,13 @@ class LevenbergMarquardBackprop():
 
             Ed_peek = self.get_sse_error(W1, b1vec, W2, b2vec)
             Ew_peek = np.sum(np.power(x_peek, 2))
-            if self.use_bay_reg:
-                beta = self.beta
-                alpha = self.alpha
-                Fx_peek = beta * Ed_peek + alpha * Ew_peek
+
+            if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
+                Fx_peek = self.beta * Ed_peek + self.alpha * Ew_peek
 
             else:
                 Fx_peek = Ed_peek + (self.alpha/self.beta) * Ew_peek
-    
+
             print_dbg('mu={} self.Fx={:.3f}'.format(
                 self.mu,
                 self.Fx))
@@ -569,14 +591,14 @@ class LevenbergMarquardBackprop():
                 self.W2 = W2
                 self.b2vec = b2vec
 
-                if self.use_bay_reg:
+                if not self.reg_mode == LevenbergMarquardBackprop.REG_MODE_MANUAL:
                     self.update_bay_reg_params(JTJ, Ed_peek, Ew_peek)
 
                 break
 
             else:
                 self.mu *= self.theta
-                
+
             if self.mu > 1e10:
                 print(
                     'Converged, breaking out, k = {} mu = {}'.format(
@@ -596,13 +618,13 @@ class LevenbergMarquardBackprop():
         # self.gamma = self.n - 2. * self.alpha / np.trace(H)
         self.gamma = self.n - 2. * self.alpha * np.trace(H_inv)
 
-        # Only now we recompute alpha and beta
         self.alpha = 0.5 * self.gamma / Ew
         self.beta = 0.5 * (self.N - self.gamma) / Ed
 
-        alpha = self.alpha
-        beta = self.beta
-        self.Fx = beta * Ed + alpha * Ew
+        if self.reg_mode == LevenbergMarquardBackprop.REG_MODE_BAYES_JAC:
+            self.Fx = self.beta * Ed + self.alpha * Ew
+        else:
+            self.Fx = Ed + (self.alpha/self.beta) * Ew
 
         print('Updated gammma={:.4f} alpha={:.4f} beta={:.4f} Fx={:.4f} Ed={:.4f} Ew={:.4f} a/b={:.6f}'.format(
             self.gamma,

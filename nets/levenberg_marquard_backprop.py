@@ -342,11 +342,11 @@ class LevenbergMarquardBackprop():
         N2 = np.dot(W2, A1) + b2vec
         A2 = self.get_response(V)
 
-        print_dbg('N1:\n{}'.format(N1))
-        print_dbg('A1:\n{}'.format(A1))
-        print_dbg('N2:\n{}'.format(N2))
-        print_dbg('A2:\n{}'.format(A2))
-        print_dbg('y:\n{}'.format(self.y))
+        # print_dbg('N1:\n{}'.format(N1))
+        # print_dbg('A1:\n{}'.format(A1))
+        # print_dbg('N2:\n{}'.format(N2))
+        # print_dbg('A2:\n{}'.format(A2))
+        # print_dbg('y:\n{}'.format(self.y))
         
         # 1b. Calculate the errors
         ERR = y - A2
@@ -378,12 +378,12 @@ class LevenbergMarquardBackprop():
             S_aug_1[:, range(q * S2, (q+1) * S2)] = S1q
 
         S_augs = (S_aug_1, S_aug_2)
-        print_dbg('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
-            S_augs[0].shape,
-            S_augs[0]))
-        print_dbg('  S_augs[1].shape = {}\n  S_augs[1] =\n{}'.format(
-            S_augs[1].shape,
-            S_augs[1]))
+        # print_dbg('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
+        #     S_augs[0].shape,
+        #     S_augs[0]))
+        # print_dbg('  S_augs[1].shape = {}\n  S_augs[1] =\n{}'.format(
+        #     S_augs[1].shape,
+        #     S_augs[1]))
 
         # 2b. Compute the elements of the Jacobian using
         #     eqs. (12.43) and (12.44)
@@ -391,16 +391,13 @@ class LevenbergMarquardBackprop():
         Nrow_j = S2 * Q
         Ncol_j = S1 * R + S1 + S2 * S1 + S2
 
-        print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
+        # print_dbg('  Nrow_j = {} (h) Ncol_j = {} (l)'.format(Nrow_j, Ncol_j))
 
         self.Jac = np.zeros((Nrow_j, Ncol_j))
 
-        J = self.Jac
-        JT = np.transpose(J)
-
         for h in range(Nrow_j):
 
-            print_dbg('  h = {}'.format(h))
+            # print_dbg('  h = {}'.format(h))
 
             for l in range(Ncol_j):
 
@@ -409,8 +406,8 @@ class LevenbergMarquardBackprop():
 
                 s = S_augs[m-1][i][h]
 
-                print_dbg(
-                    '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
+                # print_dbg(
+                #     '      S_augs[{}][{}][{}] = {}\n'.format(m-1, i, h, s))
 
                 self.Jac[h, l] = s*a
 
@@ -418,24 +415,24 @@ class LevenbergMarquardBackprop():
         JT = np.transpose(J)
         JTJ = np.dot(JT, J)
 
-        print_dbg('JT = {}'.format(JT))
-        print_dbg('v_cur = {}'.format(v_cur))
+        # print_dbg('JT = {}'.format(JT))
+        # print_dbg('v_cur = {}'.format(v_cur))
 
         g = 2. * np.dot(JT, v_cur)
         self.g_norm = np.linalg.norm(g)
 
         k = 0
 
-        print_dbg('  J={} '.format(J))
-        print_dbg('  x={} '.format(np.transpose(x_cur)))
+        # print_dbg('  J={} '.format(J))
+        # print_dbg('  x={} '.format(np.transpose(x_cur)))
 
         while True:
 
             k += 1
 
-            print_dbg(
-                '  k={}: Before multiply: k={} mu={}'.format(
-                    k, k, self.mu))
+            # print_dbg(
+            #     '  k={}: Before multiply: k={} mu={}'.format(
+            #         k, k, self.mu))
 
             if self.mu < np.finfo('float64').eps:
                 print(
@@ -448,7 +445,7 @@ class LevenbergMarquardBackprop():
             det = JTJ + self.mu * np.identity(Ncol_j)
             det_inv = np.linalg.inv(det)
 
-            print_dbg('det_inv = {}'.format(det_inv))
+            # print_dbg('det_inv = {}'.format(det_inv))
 
             jtv = np.dot(np.transpose(J), v_cur)
 
@@ -460,11 +457,6 @@ class LevenbergMarquardBackprop():
             W1, b1vec, W2, b2vec = self.x_to_weights(x_peek)
 
             rms_peek = self.get_rms_error(W1, b1vec, W2, b2vec)
-
-            print_dbg('mu={} rms_peek={} dx={}'.format(
-                self.mu,
-                rms_peek,
-                np.transpose(dx)))
 
             # 4b. Update
             if rms_peek < self.rms:
@@ -482,7 +474,7 @@ class LevenbergMarquardBackprop():
                 self.mu *= self.theta
 
             if self.mu > 1e10:
-                print_dbg(
+                print(
                     'Converged, breaking out, k = {} mu = {}'.format(
                         k,
                         self.mu))
@@ -496,4 +488,3 @@ class LevenbergMarquardBackprop():
         print('b1vec = {}'.format(self.b1vec))
         print('W2    = {}'.format(self.W2))
         print('b2vec = {}'.format(self.b2vec))
-

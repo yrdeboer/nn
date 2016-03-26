@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils as nn_utils
 from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
-from utils import print_dbg
 
 
 np.set_printoptions(linewidth=1000)
@@ -92,7 +91,7 @@ for i in range(1, iteration_count):
 
     if i in plot_points or converged:
 
-        rms_trn = sp.rms
+        rms_trn = sp.get_rms_error()
 
         # print('It={:6} rms_trn={:.5f}'.format(i, rms_trn)),
         # print('g_norm={:.3f} conv={}'.format(sp.g_norm, converged))

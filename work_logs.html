@@ -367,8 +367,16 @@ SUCCESS (Hagan 2-layer simple backprop)
 <p>
   And the derivatives to the weights are easy to compute, no backpropagation needed!
 <p>
+  <h5 align=right>2016 mar 26</h5>
+  Consolidated the non-working regularisation stuff in <tt>~/github/nn/nets/levenberg_marquard_backprop_bay_reg.py</tt>.
+<p>
+  Checked the test (<tt>test_levenberg_marquard_binary</tt>) still works for the regularised algo.
+<p>
+  Switching back to default Levenberg-Marquard <tt>~/github/nn/nets/levenberg_marquard_backprop.py</tt> and going to implement early stopping for the Hagan sinus case in: <tt>~/github/nn/apps/hagan_sinus_fit_slow_early_stopping.py</tt>, before applying it to the boats.
+<p>
+  <h3>Uh?! Why is new version so much faster</h3>
+  Observe that <tt>nets/levenberg_marquard_backprop_bay_reg.py</tt> is much faster than <tt>nets/levenberg_marquard_backprop.py</tt>, even though both pass the Levenberg-Marquard tests ...
+<p>
+  Got it, had some extra unnecessary copying and transposition of the jacobian.
+<p>
   
-      
-
-  
-    
