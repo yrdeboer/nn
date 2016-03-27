@@ -119,6 +119,107 @@ def get_sensitivity_diag(df, n):
     return np.diag(np.transpose(df(n))[0])
 
 
+def all_data_to_data_sets(all_data_inp,
+                          all_data_tar,
+                          frac_train,
+                          frac_val,
+                          fixed=False):
+
+    """
+    This function splits all training and target data into randomised
+    data sets used for training, validation and testing.
+
+    Args:
+      all_data_inp: The training input data of shape (Nrow, Ncol), where Nrow is
+                    the input vector column size and Ncol the number of
+                    input data training vectors.
+      all_data_tar: The training data target vectors of shape (S, Ncol),
+                    where S usually is the output layer neuron count
+                    of the (assumed) network.
+      frac_train:   The fraction of the data that should become training data
+      frac_val:     The fraction of the data that should become target data
+      fixed:        If True, then there will be no random fetching of
+                    data for the data sets, i.e. the returned data sets will only
+                    depend on the all_data_inp and all_data_tar.
+
+      Note: The fraction of the data that becomes testing data should be > 0.
+            equal to 1. - frac_train - frac_val.
+
+    Returns:
+      A 6-tuple with 3 data sets, training, validation and test data input and targets.
+    """
+
+    (Nrow, Ncol) = all_data_inp.shape
+    tr_inp = np.zeros((Nrow, Ncol))
+    tr_tar = np.zeros((1, Ncol))
+    val_inp = np.zeros((Nrow, Ncol))
+    val_tar = np.zeros((1, Ncol))
+    tst_inp = np.zeros((Nrow, Ncol))
+    tst_tar = np.zeros((1, Ncol))
+
+    if fixed:
+        fac = 1. / Ncol
+        ran_sample = [fac * x for x in range(0, Ncol)]
+    else:
+        ran_sample = np.random.random_sample(Ncol)
+
+    # Distribute data randomly
+    i_tr = i_val = i_tst = 0
+    for i in range(Ncol):
+
+        inp = all_data_inp[:, [i]]
+        tar = all_data_tar[:, [i]]
+        ran = ran_sample[i]
+
+        if ran < frac_train:
+            tr_inp[:, [i_tr]] = inp
+            tr_tar[:, [i_tr]] = tar
+            i_tr += 1
+
+        elif ran < frac_train + frac_val:
+
+            val_inp[:, [i_val]] = inp
+            val_tar[:, [i_val]] = tar
+            i_val += 1
+
+        else:
+            tst_inp[:, [i_tst]] = inp
+            tst_tar[:, [i_tst]] = tar
+            i_tst += 1
+
+    if not i_tr + i_val + i_tst == Ncol:
+        raise ValueError('Sum of index fractions not well')
+
+    # Cut down to actual sizes
+    tr_inp = tr_inp[:, range(0, i_tr)]
+    tr_tar = tr_tar[:, range(0, i_tr)]
+    val_inp = val_inp[:, range(0, i_val)]
+    val_tar = val_tar[:, range(0, i_val)]
+    tst_inp = tst_inp[:, range(0, i_tst)]
+    tst_tar = tst_tar[:, range(0, i_tst)]
+
+    if not tr_inp.shape[1] + val_inp.shape[1] + tst_inp.shape[1] == Ncol:
+        raise ValueError('Sum of data set sizes not well')
+
+    tot = np.sum(all_data_inp[0])
+    tr = np.sum(tr_inp[0])
+    val = np.sum(val_inp[0])
+    tst = np.sum(tst_inp[0])
+    if tot - tr - val - tst > 1e-13:
+        raise ValueError('Sum of lengths not well')
+
+    tot = np.sum(all_data_tar[0])
+    tr = np.sum(tr_tar[0])
+    val = np.sum(val_tar[0])
+    tst = np.sum(tst_tar[0])
+    diff = tot - tr - val - tst
+    if diff > 1e-11:
+        raise ValueError('Diff of prices not well: {}'.format(diff))
+
+    return tr_inp, tr_tar, val_inp, val_tar, tst_inp, tst_tar
+
+
+
 def get_fixed_test_weights(S1):
 
     if S1 == 3:

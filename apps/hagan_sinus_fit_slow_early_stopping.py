@@ -37,20 +37,65 @@ def get_training_set(interpolate, add_noise):
     gaussian noise is added to g(x).
     """
 
-    step = 0.2
+    step = 0.01
     if interpolate:
         step = step / 3.
 
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
-        y += np.random.normal(0.0, 0.3, y.shape)
+        y += np.random.normal(0.0, 0.1, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
 
 
-(train_input, train_target) = get_training_set(False, True)
+def get_data_sets():
+
+    """
+    This function returns three data sets in a 6-tuple:
+
+      (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar)
+    """
+
+    interpolate = False
+    add_noise = True
+    (all_data_inp, all_data_tar) = get_training_set(interpolate, add_noise)
+
+    fixed_data = False
+    return nn_utils.all_data_to_data_sets(all_data_inp,
+                                          all_data_tar,
+                                          0.7,
+                                          0.15,
+                                          fixed_data)
+
+
+def plot_data_sets(data_6_tup):
+
+    (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar) = data_6_tup
+
+    plt.plot(train_inp[0], train_tar[0], 'r^')
+    plt.plot(val_inp[0], val_tar[0], 'gs')
+    plt.plot(test_inp[0], test_tar[0], 'bD')
+
+    plt.title('N_tr={} N_val={} N_test={}'.format(
+        train_inp.shape[1],
+        val_inp.shape[1],
+        test_inp.shape[1]))
+
+    plt.ion()
+    plt.show()
+    plt.ioff()
+
+
+data_6_tup = get_data_sets()
+
+plot_data_sets(data_6_tup)
+
+import ipdb
+ipdb.set_trace()
+
+(train_inp, train_tar, val_inp, val_tar, test_inp, test_tar) = data_6_tup
 
 S1 = 20
 
