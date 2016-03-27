@@ -6,7 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 #
 # To start off with, we plot all feature distributions
 
-DATA_DIR_CR = '/home/ytsboe/data/boats/computer_readable'
+DATA_DIR_CR = 'computer_readable_data'
 
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
@@ -14,6 +14,7 @@ input_data = np.load('{}/input_data.npy'.format(DATA_DIR_CR))
 target_data = np.load('{}/target_data.npy'.format(DATA_DIR_CR))
 
 HIST_BIN_COUNT = 25
+
 
 def plot_feature_distributions():
 
@@ -114,6 +115,8 @@ def plot_asking_price_for_builder_name():
         if bin_count == 0:
             bin_count = 2
 
+        print('prices_bld = {} shape={}'.format(prices_bld, prices_bld.shape))
+
         plt.hist(prices_bld, bin_count)
         title = 'Asking prices ({0:}, avg={1:.2f}) hist for builder: {2:}'.format(
             bld_count,
@@ -127,10 +130,9 @@ def plot_asking_price_for_builder_name():
     pp.close()
 
     print('Average average price = {}'.format(np.mean(prices_avg)))
-    
 
 
 plot_feature_distributions()
-# plot_feature_asking_price_scatter_plots()
-# plot_feature_scatter_plots()
-plot_asking_price_for_builder_name()
+plot_feature_asking_price_scatter_plots()
+plot_feature_scatter_plots()
+# plot_asking_price_for_builder_name()

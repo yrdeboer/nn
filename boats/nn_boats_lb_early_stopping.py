@@ -1,11 +1,12 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import utils as nn_utils
 
 # Don't forget to add the parent directory to PYTHONPATH shell variable
-from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
+from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 
-
-DATA_DIR_CR = '/home/ytsboe/data/boats/computer_readable'
+DATA_DIR_CR = 'computer_readable_data'
 
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
@@ -15,143 +16,19 @@ file_paths = np.load('{}/file_paths.npy'.format(DATA_DIR_CR))
 def get_data_sets(fixed=False):
 
     """
-    This function returns the training, validation and test data.
-
-    If fixed is True, then there will be no random fetching of
-    data for the data sets.
+    This function fetches the training data from disk and uses
+    a utils function to randomly select a training, validation
+    and test set.
     """
 
-    # Fetch all data
     input_data = np.load('{}/input_data.npy'.format(DATA_DIR_CR))
     target_data = np.load('{}/target_data.npy'.format(DATA_DIR_CR))
 
-    # Division fraction training, validation and testing data
-    frac_tr = 0.7
-    frac_val = 0.15
-    frac_tst = 1. - frac_tr - frac_val 
-
-    # Prepare various data set containers
-    (Nrow, Ncol) = input_data.shape
-    tr_inp = np.zeros((Nrow, Ncol))
-    tr_tar = np.zeros((1, Ncol))
-    val_inp = np.zeros((Nrow, Ncol))
-    val_tar = np.zeros((1, Ncol))
-    tst_inp = np.zeros((Nrow, Ncol))
-    tst_tar = np.zeros((1, Ncol))
-
-    if fixed:
-        fac = 1. / Ncol
-        ran_sample = [fac * x for x in range(0, Ncol)]
-    else:
-        ran_sample = np.random.random_sample(Ncol)
-
-    # Distribute data randomly
-    i_tr = i_val = i_tst = 0
-    for i in range(Ncol):
-
-        inp = input_data[:, [i]]
-        tar = target_data[:, [i]]
-        ran = ran_sample[i]
-
-        if ran < frac_tr:
-            tr_inp[:, [i_tr]] = inp
-            tr_tar[:, [i_tr]] = tar
-            i_tr += 1
-
-        elif ran < 1. - frac_tst:
-
-            val_inp[:, [i_val]] = inp
-            val_tar[:, [i_val]] = tar
-            i_val += 1
-
-        else:
-            tst_inp[:, [i_tst]] = inp
-            tst_tar[:, [i_tst]] = tar
-            i_tst += 1
-            
-    if not i_tr + i_val + i_tst == Ncol:
-        raise ValueError('Sum of index fractions not well')
-
-    # Cut down to actual sizes
-    tr_inp = tr_inp[:, range(0, i_tr)]
-    tr_tar = tr_tar[:, range(0, i_tr)]
-    val_inp = val_inp[:, range(0, i_val)]
-    val_tar = val_tar[:, range(0, i_val)]
-    tst_inp = tst_inp[:, range(0, i_tst)]
-    tst_tar = tst_tar[:, range(0, i_tst)]
-
-    if not tr_inp.shape[1] + val_inp.shape[1] + tst_inp.shape[1] == Ncol:
-        raise ValueError('Sum of data set sizes not well')
-
-    tot = np.sum(input_data[1])
-    tr = np.sum(tr_inp[1])
-    val = np.sum(val_inp[1])
-    tst = np.sum(tst_inp[1])
-    if tot - tr - val - tst > 1e-13:
-        raise ValueError('Sum of lengths not well')
-
-    tot = np.sum(target_data[0])
-    tr = np.sum(tr_tar[0])
-    val = np.sum(val_tar[0])
-    tst = np.sum(tst_tar[0])
-    diff = tot - tr - val - tst
-    if diff > 1e-11:
-        raise ValueError('Diff of prices not well: {}'.format(diff))
-
-    return tr_inp, tr_tar, val_inp, val_tar, tst_inp, tst_tar
-
-
-def tansig(x):
-
-    return np.tanh(x)
-
-
-def dtansig(x):
-    
-    tanh = np.tanh(x)
-    return 1. - tanh*tanh
-
-
-def purelin(x):
-    return x
-
-
-def dpurelin(x):
-    return 1.
-
-def get_error(dat_inp, dat_tar, sp):
-
-    """
-    This function obtains the error, given
-    the neural net and train/target data pairs.
-
-    The mean squared error is usually used.
-
-    Args:
-      dat_inp:  Input data, columns are input vectors
-      dat_tar: Target data, columns are target values
-      sp:        Instance of a net, should have
-                 a function "get_network_response"
-
-    Returns:
-      A float, some error.
-    """
-
-    Ncol = dat_tar.shape[1]
-    if Ncol == 0.:
-        raise ValueError('No input data, cannot calculate column count')
-
-    mse = 0.
-    for i in range(Ncol):
-
-        pvec = dat_inp[:, [i]]
-        pnet = sp.get_response(pvec)
-
-        diff = dat_tar[:, [i]] - pnet
-        mse += diff * diff
-        # mse += np.abs(diff)
-
-    return mse / float(Ncol)
+    return nn_utils.all_data_to_data_sets(input_data,
+                                          target_data,
+                                          0.7,
+                                          0.15,
+                                          fixed)
 
 
 def plot_error_distributions(tr_inp,
@@ -161,7 +38,6 @@ def plot_error_distributions(tr_inp,
                              tst_inp,
                              tst_tar,
                              sp):
-
 
     i_plot = 1
 
@@ -189,7 +65,6 @@ def plot_error_distributions(tr_inp,
                     diff[i],
                     file_paths[i]))
 
-
         print('N={}: Average diff = {} sd = {}'.format(
             N,
             np.mean(diff),
@@ -205,96 +80,94 @@ def plot_error_distributions(tr_inp,
     plt.close()
 
 R = len(feature_names) + len(builder_names)
-S1 = 10
+S1 = 20
 S2 = 1
 
 kwargs = dict()
 kwargs['input_dim'] = R
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = S2
-kwargs['learning_rate'] = 0.0001
 
-print('S1 = {} alpha = {}'.format(S1, kwargs['learning_rate']))
+print('S1 = {}'.format(S1))
 
-kwargs['layer1_transfer_function'] = tansig
-kwargs['layer2_transfer_function'] = purelin
+kwargs['layer1_transfer_function'] = nn_utils.logsig
+kwargs['layer2_transfer_function'] = nn_utils.purelin
 
-kwargs['layer1_transfer_function_derivative'] = dtansig
-kwargs['layer2_transfer_function_derivative'] = dpurelin
+kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
+kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
-mult_factor = .1
-W1 = (np.random.random_sample((S1, R)) - 0.5).reshape(S1, R) * mult_factor
-b1vec = (np.random.random_sample((S1)) - 0.5).reshape((S1, 1)) * mult_factor
-W2 = (np.random.random_sample(S1) - 0.5).reshape(1, S1) * mult_factor
-b2vec = (np.random.random_sample(S2).reshape((S2, 1)) - 0.5) * mult_factor
+train_inp, train_tar, val_inp, val_tar, test_inp, test_tar  = get_data_sets()
+kwargs['training_data'] = (train_inp, train_tar)
 
-kwargs['layer1_initial_weights'] = [W1, b1vec]
-kwargs['layer2_initial_weights'] = [W2, b2vec]
-
-train_input, train_target, val_input, val_target, test_input, test_target  = get_data_sets()
-kwargs['training_data'] = (train_input, train_target)
-
-print('Training set size:   {}'.format(train_input.shape[1]))
-print('Validation set size: {}'.format(val_input.shape[1]))
-print('Test set size: {}'.format(test_input.shape[1]))
-
+print('Training set size:   {}'.format(train_inp.shape[1]))
+print('Validation set size: {}'.format(val_inp.shape[1]))
+print('Test set size: {}'.format(test_inp.shape[1]))
 
 # Instantiate backprop with init values
-sp = SimpleTwoLayerBackprop(** kwargs)
+sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 500
+iteration_count = 50
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
 # Interactive plotting of the mean squared error
-plt.axis([1, 10. * iteration_count, .01, 10.])
+plt.ion()
+
+ax1 = plt.subplot(2, 1, 1)
+ax1.set_title(r'RMS: training (blue) validation (green)')
+plt.axis([1, 10. * iteration_count, 1e-1, 1.])
 plt.yscale('log')
 plt.xscale('log')
-plt.ion()
-plt.show()
 
-# import ipdb; ipdb.set_trace()
+ax2 = plt.subplot(2, 1, 2)
+ax2.set_title(r'Histogram $y-\hat{y_{test}}$ at min rms$_{val}$')
 
-error_train = np.array([[-1. ]])
-error_val = np.array([[-1. ]])
-error_tst = np.array([[-1. ]])
+rms_val_min = np.finfo('float64').max
+weights_val_min = sp.weights_to_x()
+updated_val_min = True
 
 for i in range(1, iteration_count):
 
-    sp.train_step()
+    converged = sp.train_step()
 
-    if i in plot_points:
+    rms_train = nn_utils.get_rms_error(train_inp, train_tar, sp)
+    rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
 
-        error_train = get_error(train_input, train_target, sp)
-        error_val = get_error(val_input, val_target, sp)
-        error_tst = get_error(test_input, test_target, sp)
+    if rms_val < rms_val_min:
+        print('Updated rms_val_min to {} in iteration {}'.format(
+            rms_val_min,
+            i))
+        rms_val_min = rms_val
+        weights_val_min = sp.weights_to_x()
+        updated_val_min = True
 
-        print('Iteration: {} errors: train {}, val {}, tst {}'.format(
-            i,
-            error_train,
-            error_val,
-            error_tst))
+    if i < 5 or i == iteration_count-1 or i in plot_points or converged or updated_val_min:
 
-        plt.scatter(i, error_train, c='blue')
-        plt.scatter(i, error_val, c='red')
-        plt.scatter(i, error_tst, c='green')
-        plt.draw()
+        print(
+            'Iteration: {:5} rms_train: {:.8f} rms_val={:.8f} g_norm: {:.6f} converged: {}'.format(
+                i, rms_train, rms_val, sp.g_norm, converged))
+        sys.stdout.flush()
 
-msespng = 'mses.png'
-print('Saving mses plot to {}'.format(msespng)) 
-plt.title('Errors tr: {0:.3f} val: {1:.3f} tst: {2:.3f}'.format(
-    error_train[0,0],
-    error_val[0,0],
-    error_tst[0,0]))
-plt.savefig(msespng, format='png')
-plt.close()
+        # Training vs. validation rms (error)a
+        plt.subplot(2, 1, 1)
+        plt.scatter(i, rms_train, c='b')
+        plt.scatter(i, rms_val, c='g')
 
-sp.print_weights()
+        if updated_val_min:
+            plt.subplot(2, 1, 2)
+            plt.cla()
+            ax2.set_title(r'Histogram $y-\hat{y}_{test}$ at min rms$_{val}=%.2f$' % rms_val_min)
 
-plot_error_distributions(train_input,
-                         train_target,
-                         val_input,
-                         val_target,
-                         test_input,
-                         test_target,
-                         sp)
+            yhat = sp.get_response(test_inp)[0]
+            diff = test_tar[0] - yhat
+
+            plt.hist(diff, 50)
+            updated_val_min = False
+
+        plt.show()
+        plt.pause(.0000001)
+
+    if converged:
+        break
+
+plt.savefig('hagan_sinus_early_stopping.png')

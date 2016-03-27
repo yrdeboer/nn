@@ -51,8 +51,8 @@
 import os  
 import numpy as np
 
-DATA_DIR_IN = '/home/ytsboe/data/boats/raw_data'
-DATA_DIR_OUT = '/home/ytsboe/data/boats/computer_readable'
+DATA_DIR_IN = 'raw_data'
+DATA_DIR_OUT = 'computer_readable_data'
 MIN_BUILDERS_COUNT = 25
 FEATURE_NAMES = ('length_over_all_meters',
                  'width_meters',
@@ -135,7 +135,7 @@ def get_builders_count_dict():
     total_boats_count = 0
     low_freq_count = 0
     builders_dict = dict()
-    for builder, count in builders_dict_raw.iteritems():
+    for builder, count in builders_dict_raw.items():
 
         total_boats_count += count
 
@@ -156,7 +156,7 @@ def get_builders_count_dict():
 
     # Now create final dict with proper (large'ish) counts
     total_boats_count = 0
-    for builder, count in builders_dict.iteritems():
+    for builder, count in builders_dict.items():
 
         total_boats_count += count
 
@@ -170,7 +170,7 @@ def get_builders_count_dict():
 BUILDERS_COUNT_DICT = get_builders_count_dict()
 print('BUILDERS_COUNT_DICT = {}'.format(BUILDERS_COUNT_DICT))
 
-BUILDER_NAMES = BUILDERS_COUNT_DICT.keys()
+BUILDER_NAMES = [k for k in BUILDERS_COUNT_DICT.keys()]
 
 
 def get_value_from_line(line):
@@ -238,7 +238,7 @@ def remove_outliers(data_dicts):
 
         passes_cuts = True
 
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
 
             # No worries if no value, we substitute averages later
             if not value:
@@ -307,7 +307,7 @@ def substitute_averages(data_dicts):
 
     for data_dict in data_dicts:
 
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
 
             if key in FEATURE_NAMES or key == 'asking_price_euros':
 
@@ -336,7 +336,7 @@ def substitute_averages(data_dicts):
         #     av_dict[key]))
 
     print('\nAverages:')
-    for k, v in av_dict.iteritems():
+    for k, v in av_dict.items():
         print('  {}: {}'.format(k, v))
 
     # Substitute None's with averages
@@ -344,7 +344,7 @@ def substitute_averages(data_dicts):
     for data_dict in data_dicts:
         subst_dict = dict()
         subst_dict['file_path'] = data_dict['file_path']
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
             if key in FEATURE_NAMES or key == 'asking_price_euros':
                 if value:
                     subst_dict[key] = value
@@ -353,7 +353,7 @@ def substitute_averages(data_dicts):
 
             elif key == 'builder_name':
 
-                keys_list = BUILDERS_COUNT_DICT.keys()
+                keys_list = [k for k in BUILDERS_COUNT_DICT.keys()]
                 sparse_list = np.zeros(len(keys_list))
                 if value in BUILDERS_COUNT_DICT.keys():
                     sparse_list[keys_list.index(value)] = 1.
@@ -365,7 +365,7 @@ def substitute_averages(data_dicts):
 
     # print('Found {} completed dicts:'.format(len(subsituted_dicts)))
     # for c_dict in subsituted_dicts:
-    #     for k,v in c_dict.iteritems():
+    #     for k,v in c_dict.items():
     #         print('  {}: {}'.format(k, v))
     #     print('----')
 
@@ -375,12 +375,12 @@ def substitute_averages(data_dicts):
 def get_boat_data_cr(data_dicts):
 
     """
-    This function extens the numerical data with the
+    This function extends the numerical data with the
     sparse array for the builders.
-    It returns a matrix, of which the colums are the input vectors for training.
+    It returns a matrix, of which the
+    colums are the input vectors for training.
     """
 
-    # Finally, we can now create the output matrices
     boat_count = len(data_dicts)
     col_count = len(FEATURE_NAMES) + len(BUILDERS_COUNT_DICT.keys())
 
@@ -454,7 +454,7 @@ def normalise_to_min1_plus1(data_dicts):
 
     for data_dict in data_dicts:
 
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
 
             if key in FEATURE_NAMES or key == 'asking_price_euros':
 
@@ -474,7 +474,7 @@ def normalise_to_min1_plus1(data_dicts):
         normed_dict = dict()
         normed_dict['file_path'] = data_dict['file_path']
 
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
 
             if key in FEATURE_NAMES or key == 'asking_price_euros':
 
@@ -532,23 +532,26 @@ def write_data_to_file(save=True):
     print('\nCheck 5:')
     print('{}: {}'.format(file_paths[0], input_data[:, [0]]))
     print('{}: {}'.format(file_paths[1], input_data[:, [1]]))
-    M = len(file_paths) / 2
+    M = int(len(file_paths) / 2)
     print('{}: {}'.format(file_paths[M], input_data[:, [M]]))
-
 
     print('input_data shape: \n{}'.format(input_data.shape))
     print('target_data.shape: \n{}'.format(target_data.shape))
     print('files: {}\n'.format(len(file_paths)))
 
+    import ipdb
+    ipdb.set_trace()
+                
+
+    
     if save:
         print('Saving data to: {}'.format(DATA_DIR_OUT))
-        np.save('{}/{}'.format(DATA_DIR_OUT,'feature_names'), FEATURE_NAMES)
-        np.save('{}/{}'.format(DATA_DIR_OUT,'builder_names'), BUILDER_NAMES)
-        np.save('{}/{}'.format(DATA_DIR_OUT,'input_data'), input_data)
-        np.save('{}/{}'.format(DATA_DIR_OUT,'target_data'), target_data)
-        np.save('{}/{}'.format(DATA_DIR_OUT,'file_paths'), file_paths)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'feature_names'), FEATURE_NAMES)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'builder_names'), BUILDER_NAMES)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'input_data'), input_data)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'target_data'), target_data)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'file_paths'), file_paths)
     else:
         print('Not saving data')
 
 write_data_to_file(True)
-    

@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 # Don't forget to add the parent directory to PYTHONPATH shell variable
 from nets.simple_two_layer_backprop import SimpleTwoLayerBackprop
 
-
-DATA_DIR_CR = '/home/ytsboe/data/boats/computer_readable'
+DATA_DIR_CR = 'computer_readable_data'
 
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
