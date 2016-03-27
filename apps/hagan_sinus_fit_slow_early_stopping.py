@@ -37,7 +37,7 @@ def get_training_set(interpolate, add_noise):
     gaussian noise is added to g(x).
     """
 
-    step = 0.01
+    step = 0.05
     if interpolate:
         step = step / 3.
 
@@ -92,16 +92,13 @@ data_6_tup = get_data_sets()
 
 plot_data_sets(data_6_tup)
 
-import ipdb
-ipdb.set_trace()
-
 (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar) = data_6_tup
 
 S1 = 20
 
 kwargs = dict()
-kwargs['training_data'] = (train_input, train_target)
-kwargs['input_dim'] = train_input.shape[0]
+kwargs['training_data'] = (train_inp, train_tar)
+kwargs['input_dim'] = train_inp.shape[0]
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = 1
 
@@ -126,25 +123,32 @@ plot_points = [int(i) for i in list(logspace)]
 # Interactive plotting of the mean squared error
 plt.ion()
 
-plt.subplot(2, 1, 1)
-plt.title(r'rms')
+plt.subplot(3, 1, 1)
+plt.title(r'RMS: training (blue) validation (green)')
 plt.axis([1, 10. * iteration_count, 1e-7, 100.])
 plt.yscale('log')
 plt.xscale('log')
 
+plt.subplot(3, 1, 2)
+plt.title(r'Training fit')
+
+plt.subplot(3, 1, 3)
+plt.title(r'Early stopping fit')
 
 x_g = np.arange(-2., 2., .01)
 y_g = g(x_g)
 
-print('Initial weights:')
-sp.print_weights()
-print('Initial x:\n{}'.format(np.transpose(sp.weights_to_x())))
+# print('Initial weights:')
+# sp.print_weights()
+# print('Initial x:\n{}'.format(np.transpose(sp.weights_to_x())))
 
-print('Initial response:')
-print(sp.get_response(train_input))
-print('Initial rms:')
-print(sp.get_rms_error())
-print('--')
+# print('Initial rms:')
+# print(sp.get_rms_error())
+# print('--')
+
+rms_val_min = np.finfo('float64').max
+weights_val_min = sp.weights_to_x()
+updated_val_min = True
 
 for i in range(1, iteration_count):
 
@@ -152,31 +156,49 @@ for i in range(1, iteration_count):
 
     if i < 25 or i == iteration_count-1 or i in plot_points or converged:
 
-        rms = sp.get_rms_error()
+        rms_train = nn_utils.get_rms_error(train_inp, train_tar, sp)
+        rms_val = nn_utils.get_rms_error(val_inp, val_tar, sp)
+
+        if rms_val < rms_val_min:
+            print('Updated rms_val_min to {}'.format(rms_val_min))
+            rms_val_min = rms_val
+            weights_val_min = sp.weights_to_x()
+            updated_val_min = True
 
         print(
-            'Iteration: {:5} rms: {:.8f} g_norm: {:.6f} converged: {}'.format(
-                i, rms, sp.g_norm, converged))
+            'Iteration: {:5} rms_train: {:.8f} rms_val={:.8f} g_norm: {:.6f} converged: {}'.format(
+                i, rms_train, rms_val, sp.g_norm, converged))
         sys.stdout.flush()
 
-        plt.subplot(2, 1, 1)
-        plt.scatter(i, rms, c='b')
+        # Training vs. validation rms (error)a
+        plt.subplot(3, 1, 1)
+        plt.scatter(i, rms_train, c='b')
+        plt.scatter(i, rms_val, c='g')
 
-        plt.subplot(2, 1, 2)
+        # Curve showing target/underlying function
+        plt.subplot(3, 1, 2)
         plt.cla()
-
         plt.plot(x_g, y_g)
 
+        # Interpolating points, to see live response updates
         x, _ = get_training_set(True, False)
         y = sp.get_response(x)
         plt.scatter(x[0], np.transpose(y), c='b')
+        plt.scatter(train_inp[0], train_tar[0], c='r', marker='s')
 
-        plt.scatter(train_input[0], train_target[0], c='r', marker='s')
+        if updated_val_min:
+            plt.subplot(3, 1, 3)
+            plt.cla()
+
+            plt.plot(x_g, y_g)
+            plt.scatter(x[0], np.transpose(y), c='b')
+            plt.scatter(val_inp[0], val_tar[0], c='g', marker='D')
+            updated_val_min = False
 
         plt.show()
-        plt.pause(.00001)
+        plt.pause(.0000001)
 
     if converged:
         break
 
-plt.savefig('hagan_sinus_fit_slow_lb.png')
+plt.savefig('hagan_sinus_early_stopping.png')

@@ -308,7 +308,7 @@ class LevenbergMarquardBackprop():
             diff = self.y[:, [i]] - yhat
             mse += np.sum(diff * diff)
 
-        return mse / float(Q + self.S1)
+        return np.sqrt(mse / float(Q + self.S1))
 
     def train_step(self):
 
