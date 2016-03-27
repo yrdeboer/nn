@@ -51,8 +51,8 @@
 import os  
 import numpy as np
 
-DATA_DIR_IN = 'raw_data'
-DATA_DIR_OUT = 'computer_readable_data'
+DATA_DIR_IN = 'boats/raw_data'
+DATA_DIR_OUT = 'boats/computer_readable_data'
 MIN_BUILDERS_COUNT = 25
 FEATURE_NAMES = ('length_over_all_meters',
                  'width_meters',
@@ -245,7 +245,7 @@ def remove_outliers(data_dicts):
                 continue
 
             if key == 'asking_price_euros':
-                if value < 1. or value > 500000.:
+                if value < 1000. or value > 500000.:
                     passes_cuts = False
                     break
 
@@ -292,6 +292,24 @@ def remove_outliers(data_dicts):
     return cut_data_dicts
 
 
+def transform_data(data_dicts):
+
+    """
+    This function transforms some input data.
+
+    It takes the natural logarithm of the asking
+    prices.
+    """
+
+    for data_dict in data_dicts:
+
+        val = data_dict['asking_price_euros']
+        val = np.log(val)
+        data_dict['asking_price_euros'] = val
+
+    return data_dicts
+
+
 def substitute_averages(data_dicts):
 
     """
@@ -318,7 +336,7 @@ def substitute_averages(data_dicts):
                     except:
                         sum_dict[key] = value
                         count_dict[key] = 1
-    
+
     # Calculate averages
     av_dict = dict()
     for key in sum_dict.keys():
@@ -519,6 +537,8 @@ def write_data_to_file(save=True):
 
     data_dicts = substitute_averages(data_dicts)
 
+    data_dicts = transform_data(data_dicts)
+
     print('\nCheck 3:')
     print(data_dicts[1:5])
 
@@ -539,11 +559,6 @@ def write_data_to_file(save=True):
     print('target_data.shape: \n{}'.format(target_data.shape))
     print('files: {}\n'.format(len(file_paths)))
 
-    import ipdb
-    ipdb.set_trace()
-                
-
-    
     if save:
         print('Saving data to: {}'.format(DATA_DIR_OUT))
         np.save('{}/{}'.format(DATA_DIR_OUT, 'feature_names'), FEATURE_NAMES)

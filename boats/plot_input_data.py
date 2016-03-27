@@ -6,7 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 #
 # To start off with, we plot all feature distributions
 
-DATA_DIR_CR = 'computer_readable_data'
+DATA_DIR_CR = 'boats/computer_readable_data'
 
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
@@ -133,6 +133,6 @@ def plot_asking_price_for_builder_name():
 
 
 plot_feature_distributions()
-plot_feature_asking_price_scatter_plots()
-plot_feature_scatter_plots()
+# plot_feature_asking_price_scatter_plots()
+# plot_feature_scatter_plots()
 # plot_asking_price_for_builder_name()

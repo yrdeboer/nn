@@ -391,7 +391,19 @@ SUCCESS (Hagan 2-layer simple backprop)
     (venv3)ytsen @ y700 ~/github/nn (master)
   </pre>
 
+  Typical rms value on the validation/test set ~0.16, reached after less than 10 iterations.
+<p>
+  Asking price seems to give better response when take log, since the peak is now
+  not on a side and to both sides the histogram diminishes.
+<p>
+  25-40 nodes in the hidden layer seem adequate, gets the validation error down to 0.11.
+<p>
+  Running again for same validation rms and plotting the test y-y^hat distribution:
+<p>
+  <img src="plots/nn_boats_lb_early_stopping.png">(Used 40 nodes in the hidden layer).
+<p>
+  
+  
 
   <a name="bottom"></a>
   <a href="#top">Top</a>
-    

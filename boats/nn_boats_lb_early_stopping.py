@@ -6,7 +6,7 @@ import utils as nn_utils
 # Don't forget to add the parent directory to PYTHONPATH shell variable
 from nets.levenberg_marquard_backprop import LevenbergMarquardBackprop
 
-DATA_DIR_CR = 'computer_readable_data'
+DATA_DIR_CR = 'boats/computer_readable_data'
 
 feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
@@ -80,7 +80,7 @@ def plot_error_distributions(tr_inp,
     plt.close()
 
 R = len(feature_names) + len(builder_names)
-S1 = 20
+S1 = 40
 S2 = 1
 
 kwargs = dict()
@@ -106,7 +106,7 @@ print('Test set size: {}'.format(test_inp.shape[1]))
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 50
+iteration_count = 15
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -115,7 +115,7 @@ plt.ion()
 
 ax1 = plt.subplot(2, 1, 1)
 ax1.set_title(r'RMS: training (blue) validation (green)')
-plt.axis([1, 10. * iteration_count, 1e-1, 1.])
+plt.axis([1, 10. * iteration_count, 1e-2, 1.])
 plt.yscale('log')
 plt.xscale('log')
 
@@ -141,7 +141,7 @@ for i in range(1, iteration_count):
         weights_val_min = sp.weights_to_x()
         updated_val_min = True
 
-    if i < 5 or i == iteration_count-1 or i in plot_points or converged or updated_val_min:
+    if True:
 
         print(
             'Iteration: {:5} rms_train: {:.8f} rms_val={:.8f} g_norm: {:.6f} converged: {}'.format(
@@ -156,7 +156,8 @@ for i in range(1, iteration_count):
         if updated_val_min:
             plt.subplot(2, 1, 2)
             plt.cla()
-            ax2.set_title(r'Histogram $y-\hat{y}_{test}$ at min rms$_{val}=%.2f$' % rms_val_min)
+            ax2.set_title(r'Histogram $y-\hat{y}_{test}$ at min rms$_{val}=%.3f$' % rms_val_min)
+            plt.xlim(-1., 1.)
 
             yhat = sp.get_response(test_inp)[0]
             diff = test_tar[0] - yhat
@@ -170,4 +171,4 @@ for i in range(1, iteration_count):
     if converged:
         break
 
-plt.savefig('hagan_sinus_early_stopping.png')
+plt.savefig('nn_boats_lb_early_stopping.png')
