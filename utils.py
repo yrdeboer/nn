@@ -237,3 +237,19 @@ def get_fixed_test_weights(S1):
         return (W1, b1vec, W2, b2vec)
     
     raise ValueError('No fixed weights for neuron count S1: {}'.format(S1))
+
+
+def get_beta_in_ols(Y, X):
+
+    """
+    This function returns the vector b, which minismises
+    the error function ||Y-b^T*X||^2.
+
+    Y has shape (1, N_data)
+    X has shape (N_features, N_data)
+    beta has shape (N_features, 1)
+    """
+    XYT = np.dot(X, np.transpose(Y))
+    XXT = np.dot(X, np.transpose(X))
+    XXT_inv = np.linalg.inv(XXT)
+    return np.dot(XXT_inv, XYT)
