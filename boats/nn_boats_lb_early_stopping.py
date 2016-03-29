@@ -13,7 +13,12 @@ feature_names = np.load('{}/feature_names.npy'.format(DATA_DIR_CR))
 builder_names = np.load('{}/builder_names.npy'.format(DATA_DIR_CR))
 file_paths = np.load('{}/file_paths.npy'.format(DATA_DIR_CR))
 
-BINCOUNT = 30
+print('feature_names (count={}): {}'.format(len(feature_names), feature_names))
+print('builder_names (count={}): {}'.format(len(builder_names), builder_names))
+
+BINCOUNT = 30  # Histograms
+
+DATA_OUTPUT_DIR = 'data_output'
 
 
 def get_data_sets(fixed=False):
@@ -109,12 +114,31 @@ print('Validation set size: {}'.format(val_inp.shape[1]))
 print('Test set size: {}'.format(test_inp.shape[1]))
 
 
-plot_utils.plot_ols(train_inp, train_tar, test_inp, test_tar, BINCOUNT)
+plot_utils.plot_ols(train_inp,
+                    train_tar,
+                    test_inp,
+                    test_tar,
+                    BINCOUNT,
+                    1,
+                    'errors_ols_original.png')
+
+
+beta = nn_utils.get_beta_in_ols(train_tar, train_inp)
+for i in range(beta.shape[0]):
+
+    if i < len(feature_names):
+        name = feature_names[i]
+    else:
+        name = builder_names[i - len(feature_names)]
+
+    print('{}: {}'.format(
+        name,
+        beta[i]))
 
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 15
+iteration_count = 10
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -193,5 +217,15 @@ for i in range(1, iteration_count):
 
 plt.savefig('nn_boats_lb_early_stopping.png')
 
-import ipdb
-ipdb.set_trace()
+f_name_weights = 'weights_val_min'
+f_name_data_6_tup = 'data_6_tup'
+f_name_s1 = 's1'
+
+# print('S1={}'.format(S1))
+# print('weights_val_min:\n{}'.format(weights_val_min))
+# print('data_6_tup:\n{}'.format(data_6_tup))
+
+print('Saving data to: {}'.format(DATA_OUTPUT_DIR))
+np.save('{}/{}'.format(DATA_OUTPUT_DIR, f_name_weights), weights_val_min)
+np.save('{}/{}'.format(DATA_OUTPUT_DIR, f_name_data_6_tup), data_6_tup)
+np.save('{}/{}'.format(DATA_OUTPUT_DIR, f_name_s1), S1)

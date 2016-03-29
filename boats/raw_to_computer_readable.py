@@ -387,7 +387,7 @@ def substitute_averages(data_dicts):
     #         print('  {}: {}'.format(k, v))
     #     print('----')
 
-    return subsituted_dicts
+    return subsituted_dicts, av_dict
 
 
 def get_boat_data_cr(data_dicts):
@@ -506,7 +506,7 @@ def normalise_to_min1_plus1(data_dicts):
 
         normed_data_dicts.append(normed_dict)
 
-    return normed_data_dicts
+    return normed_data_dicts, min_dict, max_dict
 
 
 def write_data_to_file(save=True):
@@ -535,14 +535,14 @@ def write_data_to_file(save=True):
     print('\nCheck 2:')
     print(data_dicts[1:5])
 
-    data_dicts = substitute_averages(data_dicts)
+    data_dicts, averages = substitute_averages(data_dicts)
 
     data_dicts = transform_data(data_dicts)
 
     print('\nCheck 3:')
     print(data_dicts[1:5])
 
-    data_dicts = normalise_to_min1_plus1(data_dicts)
+    data_dicts, min_dict, max_dict = normalise_to_min1_plus1(data_dicts)
 
     print('\nCheck 4:')
     print(data_dicts[1:5])
@@ -563,9 +563,12 @@ def write_data_to_file(save=True):
         print('Saving data to: {}'.format(DATA_DIR_OUT))
         np.save('{}/{}'.format(DATA_DIR_OUT, 'feature_names'), FEATURE_NAMES)
         np.save('{}/{}'.format(DATA_DIR_OUT, 'builder_names'), BUILDER_NAMES)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'averages'), averages)
         np.save('{}/{}'.format(DATA_DIR_OUT, 'input_data'), input_data)
         np.save('{}/{}'.format(DATA_DIR_OUT, 'target_data'), target_data)
         np.save('{}/{}'.format(DATA_DIR_OUT, 'file_paths'), file_paths)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'min_dict'), min_dict)
+        np.save('{}/{}'.format(DATA_DIR_OUT, 'max_dict'), max_dict)
     else:
         print('Not saving data')
 
