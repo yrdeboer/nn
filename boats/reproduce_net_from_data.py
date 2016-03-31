@@ -12,7 +12,7 @@ f_name_s1 = 's1.npy'
 
 weights_val_min = np.load('{}/{}'.format(DATA_INPUT_DIR, f_name_weights))
 data_6_tup = np.load('{}/{}'.format(DATA_INPUT_DIR, f_name_data_6_tup))
-S1 = np.load('{}/{}'.format(DATA_INPUT_DIR, f_name_s1))
+S1 = int(np.load('{}/{}'.format(DATA_INPUT_DIR, f_name_s1)))
 
 print('S1={}'.format(S1))
 print('weights_val_min:\n{}'.format(weights_val_min))
@@ -57,6 +57,8 @@ sp.b1vec = b1vec
 sp.W2 = W2
 sp.b2vec = b2vec
 
+sp.train_step()
+
 plot_utils.plot_ols(train_inp,
                     train_tar,
                     test_inp,
@@ -73,3 +75,6 @@ plot_utils.plot_net_error(train_inp,
                           BINCOUNT,
                           2,
                           'errors_net_reproduced.png')
+
+import ipdb
+ipdb.set_trace()

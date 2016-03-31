@@ -19,6 +19,7 @@ class LevenbergMarquardBackprop():
         self.df2 = kwargs.get('layer2_transfer_function_derivative', None)
         self.mu = kwargs.get('mu', 0.01)
         self.theta = kwargs.get('theta', 10.0)
+        self.do_sensitivity_analysis = kwargs.get('do_sensitivity_analysis', False)
 
         training_data = kwargs.get('training_data', None)
         if training_data:
@@ -365,6 +366,10 @@ class LevenbergMarquardBackprop():
         S_aug_2 = np.zeros((S2, S2 * Q))
         S_aug_1 = np.zeros((S1, S2 * Q))
 
+        # Derivative of sum squared error to input
+        if self.do_sensitivity_analysis:
+            self.sensitivity = np.zeros((R, 1))
+
         for q in range(Q):
 
             F2q = nn_utils.get_sensitivity_diag(df2, N2[:, [q]])
@@ -376,6 +381,10 @@ class LevenbergMarquardBackprop():
                 np.dot(F1q, np.transpose(W2)),
                 S2q)
             S_aug_1[:, range(q * S2, (q+1) * S2)] = S1q
+
+            # Sensitivity analysis, as per Hagan eq. (17.25)
+            if self.do_sensitivity_analysis:
+                self.sensitivity += np.dot(np.transpose(self.W1), S1q)
 
         S_augs = (S_aug_1, S_aug_2)
         # print_dbg('  S_augs[0].shape = {}\n  S_augs[0] =\n{}'.format(
