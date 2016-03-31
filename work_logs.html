@@ -420,5 +420,70 @@ SUCCESS (Hagan 2-layer simple backprop)
 └─ $ ▶ python boats/reproduce_net_from_data.py    
   </pre>
 
+  <h5 align=right>2016 mar 31</h5>
+  <h3>Sensitivity Analysis</h3>
+  Added sensitivy tracking, ordered the parameters:
+  <pre>
+    ipdb> pprint.pprint(sorted(tuple(zip(dfdp_lst, features))))
+[(-1033.0096877708813, 'length_over_all_meters'),
+ (-362.5028003600454, 'build_year'),
+ (-357.5900789182798, 'hallberg-rassy'),
+ (-251.92739075046998, 'victoire'),
+ (-212.4983765121567, 'contest'),
+ (-191.9251843628137, 'None'),
+ (-165.47068121158213, 'compromis'),
+ (-165.2635180274413, 'dehler'),
+ (-150.16300550824178, 'etap'),
+ (-102.12385979304005, 'elan'),
+ (-91.8584283029938, 'width_meters'),
+ (-87.76366641673947, 'jeanneau'),
+ (-80.72036168843829, 'engine_build_year'),
+ (-71.69833130723515, 'beneteau'),
+ (-56.901554160828105, 'dufour'),
+ (-51.8255477116102, 'hanse'),
+ (-29.138273549904973, 'bavaria'),
+ (3.1056364205509794, 'ballast_kgs'),
+ (11.157138496882078, 'displaces_kgs'),
+    (83.39356546481153, 'draft_meters')]
+  </pre>
+  The weight values are taken at minimum rms for the validation set.
+  The derivatives are taken on the training set.
+<p>
+  These values are the summed derivatives of the sum squared error
+  to the input vectors, as per Hagan eq. (17.25):
+
+  <pre>
+    Sensitivities for iteration 29
+[(-1353.54937921491, 'length_over_all_meters'),
+ (-413.8675449561241, 'hallberg-rassy'),
+ (-399.7505157930764, 'compromis'),
+ (-376.8573966481697, 'build_year'),
+ (-320.94576351303317, 'victoire'),
+ (-113.19930294182328, 'contest'),
+ (-99.79940474631616, 'etap'),
+ (-97.46511528409533, 'None'),
+ (-57.68741177750272, 'dehler'),
+ (-16.88788289038877, 'beneteau'),
+ (4.9571181650697875, 'jeanneau'),
+ (5.617108842392814, 'elan'),
+ (44.07794716376523, 'hanse'),
+ (53.59719742379652, 'bavaria'),
+ (70.1406400148975, 'dufour')]
+</pre>
+
+  How much does this say about the most important input parameters ... ?
+<p>
+  We should do a variance/covariance analysis ...
+  
+
+
+
+
+
+
+
+
+
+  
   <a name="bottom"></a>
   <a href="#top">Top</a>

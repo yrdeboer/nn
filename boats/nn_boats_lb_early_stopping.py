@@ -1,4 +1,5 @@
 import sys
+import pprint
 import numpy as np
 import matplotlib.pyplot as plt
 import utils as nn_utils
@@ -87,6 +88,16 @@ def plot_error_distributions(tr_inp,
     plt.savefig(diffpng)
     plt.close()
 
+
+def print_sensitivities(sp):
+
+    sens = [float(s) for s in sp.sensitivity]
+    features = list()
+    features[0:len(feature_names)] = feature_names
+    features[len(feature_names):] = builder_names
+    pprint.pprint(sorted(tuple(zip(sens, features))))
+
+
 R = len(feature_names) + len(builder_names)
 S1 = 35
 S2 = 1
@@ -103,6 +114,8 @@ kwargs['layer2_transfer_function'] = nn_utils.purelin
 
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
+
+kwargs['do_sensitivity_analysis'] = True
 
 data_6_tup = get_data_sets()
 
@@ -138,7 +151,7 @@ for i in range(beta.shape[0]):
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10
+iteration_count = 30
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
@@ -212,8 +225,13 @@ for i in range(1, iteration_count):
 
         b = nn_utils.get_beta_in_ols(train_tar, train_inp)
 
+        print('Sensitivities for iteration {}'.format(i))
+        print_sensitivities(sp)
+
     if converged:
         break
+
+
 
 plt.savefig('nn_boats_lb_early_stopping.png')
 

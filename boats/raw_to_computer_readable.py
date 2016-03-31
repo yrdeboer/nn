@@ -62,6 +62,9 @@ FEATURE_NAMES = ('length_over_all_meters',
                  'ballast_kgs',
                  'engine_build_year')
 
+FEATURE_NAMES = ('length_over_all_meters',
+                 'build_year')
+
 
 PRINT_DEBUG = True
 
@@ -448,7 +451,7 @@ def map_to_min1_plus1(val, min, max):
     assumed to be on [min, max], onto [-1, 1].
     """
 
-    return -1. + 2. * (val - min) / (max - min) 
+    return -1. + 2. * (val - min) / (max - min)
 
 
 def normalise_to_min1_plus1(data_dicts):
