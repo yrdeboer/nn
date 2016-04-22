@@ -90,7 +90,7 @@ def plot_data_sets(data_6_tup):
     plt.ioff()
 
 
-np.random.seed(1)
+np.random.seed(2)
     
 data_6_tup = get_data_sets()
 
@@ -102,6 +102,7 @@ S1 = 20
 
 kwargs = dict()
 kwargs['training_data'] = (train_inp, train_tar)
+kwargs['validation_data'] = (val_inp, val_tar)
 kwargs['input_dim'] = train_inp.shape[0]
 kwargs['layer1_neuron_count'] = S1
 kwargs['layer2_neuron_count'] = 1
@@ -112,14 +113,10 @@ kwargs['layer2_transfer_function'] = nn_utils.purelin
 kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
-# W1, b1vec, W2, b2vec = nn_utils.get_fixed_test_weights(S1)
-# kwargs['layer1_initial_weights'] = (W1, b1vec)
-# kwargs['layer2_initial_weights'] = (W2, b2vec)
-
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 10
+iteration_count = 1000
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 

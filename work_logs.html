@@ -1119,7 +1119,40 @@ SUCCESS (Hagan 2-layer simple backprop)
 </table>
 
 
+<h5 align=right>2016 apr 22</h5>
+<h3>Interal Early Stopping</h3>
+Since we could not get the bayesian regularisation to work, we can try the following (much simpler) approach:
+<p>
+  <i>
+    In determining the step size in the direction derived by the Jacobian from the training data,
+    we will use the validation data set, in stead of the training data.
+  </i>
 
+  Benchmark external early stopping:
+  <pre>
+(venv3)ytsen @ y700 ~/github/nn (master)
+└─ $ ▶ python apps/hagan_sinus_fit_slow_early_stopping.py &> early_stopping_external_1000.txt
+
+Updated rms_val_min to 0.0789608314102193
+Iteration:    45 rms_train: 0.06986706 rms_val=0.07890447 g_norm: 0.152978 converged: False
+Iteration:   999 rms_train: 0.04176739 rms_val=0.12091754 g_norm: 0.034777 converged: False
+  </pre>
+
+  Internal early stopping:
+  <pre>
+    Converged, breaking out, k = 14 mu = 100000000000.0
+Iteration:     8 rms_train: 0.08582732 rms_val=0.07841963 g_norm: 7.207312 converged: True
+  </pre>
+
+  <h3>A W E S O M E !!</h3>
+  From <b>0.12</b> down to <b>0.08</b>, this looks likee it was a very good idea!
+
+<p>
+
+  Now confirm with 1) some different seeds and 2) another data set ?
+  
+  
+                                                                      
 
 
   <a name="bottom"></a>

@@ -28,6 +28,13 @@ class LevenbergMarquardBackprop():
         else:
             print_dbg('Warning: no training data')
 
+        validation_data = kwargs.get('validation_data', None)
+        if validation_data:
+            self.V_val = validation_data[0]
+            self.y_val = validation_data[1]
+        else:
+            print_dbg('Warning: no validation data')
+
         W1inits = kwargs.get('layer1_initial_weights', None)
         if W1inits:
             self.W1 = W1inits[0]
@@ -309,7 +316,29 @@ class LevenbergMarquardBackprop():
             diff = self.y[:, [i]] - yhat
             mse += np.sum(diff * diff)
 
-        return np.sqrt(mse / float(Q + self.S1))
+        rms_train = np.sqrt(mse / float(Q + self.S1))
+
+        ########################
+
+        Q = self.V_val.shape[1]
+
+        mse = 0.
+        for i in range(Q):
+
+            pvec = self.V_val[:, [i]]
+            yhat = self.get_response(pvec, W1, b1vec, W2, b2vec)
+
+            diff = self.y_val[:, [i]] - yhat
+            mse += np.sum(diff * diff)
+
+            rms_val = np.sqrt(mse / float(Q + self.S1))
+            print_dbg('RMS tr--val = {}--{}'.format(
+                rms_train,
+                rms_val))
+        
+        ########################
+
+        return rms_val
 
     def train_step(self):
 
