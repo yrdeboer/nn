@@ -58,17 +58,19 @@ def get_training_set(interpolate, add_noise, seed=None):
     return (x.reshape(1, N), y.reshape(1, N))
 
 
-def get_data_sets():
+def get_data_sets(seed=None):
 
     """
     This function returns three data sets in a 6-tuple:
 
       (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar)
+
+    If seed is set to some integer, than it is guaranteed that
+    for the same seed, the same data sets are returned.
     """
 
     interpolate = False
     add_noise = True
-    seed = 1
     (all_data_inp, all_data_tar) = get_training_set(interpolate,
                                                     add_noise,
                                                     seed)
@@ -98,11 +100,10 @@ def plot_data_sets(data_6_tup):
     plt.show()
     plt.ioff()
 
-
-data_6_tup = get_data_sets()
+seed = 1
+data_6_tup = get_data_sets(seed)
 
 plot_data_sets(data_6_tup)
-
 import ipdb
 ipdb.set_trace()
 
@@ -123,7 +124,6 @@ kwargs['layer1_transfer_function_derivative'] = nn_utils.dlogsig
 kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 
 # W1, b1vec, W2, b2vec = nn_utils.get_fixed_test_weights(S1)
-
 # kwargs['layer1_initial_weights'] = (W1, b1vec)
 # kwargs['layer2_initial_weights'] = (W2, b2vec)
 
