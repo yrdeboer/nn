@@ -14,7 +14,7 @@ def g(p):
     return 1. + np.sin(0.5 * np.pi * p)
 
 
-def get_training_set(interpolate, add_noise):
+def get_training_set(interpolate, add_noise, seed=None):
 
     """
     This function returns the training data, also
@@ -35,6 +35,10 @@ def get_training_set(interpolate, add_noise):
 
     If add_noise is set to True, then some random
     gaussian noise is added to g(x).
+
+    If seed is set to some integer value, the random number generator
+    will be seeded with it, so that every time it is called,
+    the same noise will be added.
     """
 
     step = 0.05
@@ -44,6 +48,10 @@ def get_training_set(interpolate, add_noise):
     x = np.arange(-2., 2.1, step)
     y = g(x)
     if add_noise:
+
+        if seed:
+            np.random.seed(seed)
+        
         y += np.random.normal(0.0, 0.1, y.shape)
     N = len(x)
 
@@ -60,14 +68,17 @@ def get_data_sets():
 
     interpolate = False
     add_noise = True
-    (all_data_inp, all_data_tar) = get_training_set(interpolate, add_noise)
+    seed = 1
+    (all_data_inp, all_data_tar) = get_training_set(interpolate,
+                                                    add_noise,
+                                                    seed)
 
-    fixed_data = False
+
     return nn_utils.all_data_to_data_sets(all_data_inp,
                                           all_data_tar,
                                           0.7,
                                           0.15,
-                                          fixed_data)
+                                          seed)
 
 
 def plot_data_sets(data_6_tup):
@@ -91,6 +102,9 @@ def plot_data_sets(data_6_tup):
 data_6_tup = get_data_sets()
 
 plot_data_sets(data_6_tup)
+
+import ipdb
+ipdb.set_trace()
 
 (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar) = data_6_tup
 

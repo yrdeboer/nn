@@ -123,7 +123,7 @@ def all_data_to_data_sets(all_data_inp,
                           all_data_tar,
                           frac_train,
                           frac_val,
-                          fixed=False):
+                          seed=None):
 
     """
     This function splits all training and target data into randomised
@@ -138,9 +138,9 @@ def all_data_to_data_sets(all_data_inp,
                     of the (assumed) network.
       frac_train:   The fraction of the data that should become training data
       frac_val:     The fraction of the data that should become target data
-      fixed:        If True, then there will be no random fetching of
-                    data for the data sets, i.e. the returned data sets will only
-                    depend on the all_data_inp and all_data_tar.
+      seed:         If set to some integer, the the random number generator
+                    that determines the selectio of data points for train,
+                    test or validation, is seeded with its value.
 
       Note: The fraction of the data that becomes testing data should be > 0.
             equal to 1. - frac_train - frac_val.
@@ -157,11 +157,10 @@ def all_data_to_data_sets(all_data_inp,
     tst_inp = np.zeros((Nrow, Ncol))
     tst_tar = np.zeros((1, Ncol))
 
-    if fixed:
-        fac = 1. / Ncol
-        ran_sample = [fac * x for x in range(0, Ncol)]
-    else:
-        ran_sample = np.random.random_sample(Ncol)
+    if seed:
+        np.random.seed(seed)
+
+    ran_sample = np.random.random_sample(Ncol)
 
     # Distribute data randomly
     i_tr = i_val = i_tst = 0
