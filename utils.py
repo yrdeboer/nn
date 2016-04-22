@@ -122,8 +122,7 @@ def get_sensitivity_diag(df, n):
 def all_data_to_data_sets(all_data_inp,
                           all_data_tar,
                           frac_train,
-                          frac_val,
-                          seed=None):
+                          frac_val):
 
     """
     This function splits all training and target data into randomised
@@ -138,9 +137,6 @@ def all_data_to_data_sets(all_data_inp,
                     of the (assumed) network.
       frac_train:   The fraction of the data that should become training data
       frac_val:     The fraction of the data that should become target data
-      seed:         If set to some integer, the the random number generator
-                    that determines the selectio of data points for train,
-                    test or validation, is seeded with its value.
 
       Note: The fraction of the data that becomes testing data should be > 0.
             equal to 1. - frac_train - frac_val.
@@ -156,9 +152,6 @@ def all_data_to_data_sets(all_data_inp,
     val_tar = np.zeros((1, Ncol))
     tst_inp = np.zeros((Nrow, Ncol))
     tst_tar = np.zeros((1, Ncol))
-
-    if seed:
-        np.random.seed(seed)
 
     ran_sample = np.random.random_sample(Ncol)
 

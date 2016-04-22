@@ -14,7 +14,7 @@ def g(p):
     return 1. + np.sin(0.5 * np.pi * p)
 
 
-def get_training_set(interpolate, add_noise, seed=None):
+def get_training_set(interpolate, add_noise):
 
     """
     This function returns the training data, also
@@ -35,10 +35,6 @@ def get_training_set(interpolate, add_noise, seed=None):
 
     If add_noise is set to True, then some random
     gaussian noise is added to g(x).
-
-    If seed is set to some integer value, the random number generator
-    will be seeded with it, so that every time it is called,
-    the same noise will be added.
     """
 
     step = 0.05
@@ -49,38 +45,31 @@ def get_training_set(interpolate, add_noise, seed=None):
     y = g(x)
     if add_noise:
 
-        if seed:
-            np.random.seed(seed)
-        
         y += np.random.normal(0.0, 0.1, y.shape)
     N = len(x)
 
     return (x.reshape(1, N), y.reshape(1, N))
 
 
-def get_data_sets(seed=None):
+def get_data_sets():
 
     """
     This function returns three data sets in a 6-tuple:
 
       (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar)
 
-    If seed is set to some integer, than it is guaranteed that
-    for the same seed, the same data sets are returned.
     """
 
     interpolate = False
     add_noise = True
     (all_data_inp, all_data_tar) = get_training_set(interpolate,
-                                                    add_noise,
-                                                    seed)
+                                                    add_noise)
 
 
     return nn_utils.all_data_to_data_sets(all_data_inp,
                                           all_data_tar,
                                           0.7,
-                                          0.15,
-                                          seed)
+                                          0.15)
 
 
 def plot_data_sets(data_6_tup):
@@ -100,12 +89,12 @@ def plot_data_sets(data_6_tup):
     plt.show()
     plt.ioff()
 
-seed = 1
-data_6_tup = get_data_sets(seed)
+
+np.random.seed(1)
+    
+data_6_tup = get_data_sets()
 
 plot_data_sets(data_6_tup)
-import ipdb
-ipdb.set_trace()
 
 (train_inp, train_tar, val_inp, val_tar, test_inp, test_tar) = data_6_tup
 
@@ -130,7 +119,7 @@ kwargs['layer2_transfer_function_derivative'] = nn_utils.dpurelin
 # Instantiate backprop with init values
 sp = LevenbergMarquardBackprop(** kwargs)
 
-iteration_count = 1000
+iteration_count = 10
 logspace = np.logspace(1., np.log(iteration_count), 100)
 plot_points = [int(i) for i in list(logspace)]
 
